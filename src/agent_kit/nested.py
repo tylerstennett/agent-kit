@@ -127,10 +127,17 @@ class NestedAgentTool(BaseTool):
             return parent
 
         merged = cast(AgentState, dict(parent))
+        parent_metadata = dict(parent.get("metadata", {}))
+        child_metadata = dict(child.get("metadata", {}))
+        child_metadata.pop("_agent_depth", None)
         merged_metadata = merge_metadata(
-            dict(parent.get("metadata", {})),
-            dict(child.get("metadata", {})),
+            parent_metadata,
+            child_metadata,
         )
+        if "_agent_depth" in parent_metadata:
+            merged_metadata["_agent_depth"] = parent_metadata["_agent_depth"]
+        else:
+            merged_metadata.pop("_agent_depth", None)
         merged["metadata"] = merged_metadata
 
         if mode == "shared":

@@ -27,3 +27,6 @@ def test_stream_emits_core_event_types_and_state_snapshot_option() -> None:
     state_events = [event for event in events if isinstance(event, StateUpdateEvent)]
     assert state_events
     assert all(event.snapshot is not None for event in state_events)
+    assert all(event.delta for event in state_events)
+    assert any("messages" in event.delta for event in state_events)
+    assert any("tool_outputs" in event.delta for event in state_events)
