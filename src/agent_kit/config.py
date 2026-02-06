@@ -56,7 +56,7 @@ AfterToolHook = Callable[
 
 @dataclass(slots=True)
 class InvocationConfig:
-    execution_mode: ExecutionMode = "sequential"
+    execution_mode: ExecutionMode | None = None
     recursion_limit: int | None = None
     max_steps: int | None = None
     include_state_snapshots: bool = False

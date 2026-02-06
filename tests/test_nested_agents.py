@@ -50,3 +50,29 @@ def test_nested_agent_depth_limit_enforced() -> None:
 
     assert results[0].status == "failed"
     assert results[0].error is not None
+
+
+def test_nested_agent_depth_does_not_leak_across_siblings() -> None:
+    child = build_child_agent()
+    nested_tool = child.as_tool(name="delegate", policy=NestedAgentPolicy(max_depth=1))
+
+    parent_model = FakeModelAdapter(
+        responses=[
+            make_response(
+                "delegate once",
+                tool_calls=[{"id": "n1", "name": "delegate", "args": {"input": "first"}}],
+            ),
+            make_response(
+                "delegate twice",
+                tool_calls=[{"id": "n2", "name": "delegate", "args": {"input": "second"}}],
+            ),
+            make_response("parent done"),
+        ]
+    )
+    parent = Agent(model=parent_model, tools=[nested_tool])
+
+    out = parent.run("go")
+
+    assert out["termination"]["reason"] == "completed"
+    assert [result.status for result in out["tool_outputs"]] == ["success", "success"]
+    assert "_agent_depth" not in out["metadata"]

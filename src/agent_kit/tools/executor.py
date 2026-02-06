@@ -57,7 +57,7 @@ class ToolExecutor:
         *,
         event_sink: EventSink | None = None,
     ) -> tuple[AgentState, list[ToolResult]]:
-        mode: ExecutionMode = config.execution_mode
+        mode: ExecutionMode = config.execution_mode or "sequential"
         if mode == "parallel" and len(tool_calls) > 1:
             return self._execute_parallel_sync(state, tool_calls, config, event_sink=event_sink)
         return self._execute_sequential_sync(state, tool_calls, config, event_sink=event_sink)
@@ -70,7 +70,7 @@ class ToolExecutor:
         *,
         event_sink: EventSink | None = None,
     ) -> tuple[AgentState, list[ToolResult]]:
-        mode: ExecutionMode = config.execution_mode
+        mode: ExecutionMode = config.execution_mode or "sequential"
         if mode == "parallel" and len(tool_calls) > 1:
             return await self._execute_parallel_async(
                 state, tool_calls, config, event_sink=event_sink
@@ -201,7 +201,7 @@ class ToolExecutor:
             tool_name=tool_name,
             call_id=call_id,
             tool_args=tool_args,
-            metadata={"mode": config.execution_mode},
+            metadata={"mode": config.execution_mode or "sequential"},
         )
         if event_sink:
             event_sink(
@@ -250,7 +250,7 @@ class ToolExecutor:
             tool_name=tool_name,
             call_id=call_id,
             tool_args=tool_args,
-            metadata={"mode": config.execution_mode},
+            metadata={"mode": config.execution_mode or "sequential"},
         )
         if event_sink:
             event_sink(

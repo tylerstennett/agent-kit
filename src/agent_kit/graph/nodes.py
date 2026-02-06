@@ -11,7 +11,7 @@ from ..events import LLMTokenEvent, StateUpdateEvent
 from ..model_adapter import ModelAdapter, ToolCall
 from ..state import AgentState
 from ..tools.executor import ToolExecutor
-from ..utils.state_utils import state_delta
+from ..utils.state_utils import clone_state, state_delta
 
 EventSink = Callable[[object], None]
 
@@ -51,7 +51,7 @@ def reasoning_step(
     *,
     event_sink: EventSink | None = None,
 ) -> tuple[AgentState, list[ToolCall]]:
-    before = state
+    before = clone_state(state)
     response = model.complete(list(state.get("messages", [])), config)
     messages = list(state.get("messages", []))
     messages.append(response.message)
@@ -71,7 +71,7 @@ async def areasoning_step(
     *,
     event_sink: EventSink | None = None,
 ) -> tuple[AgentState, list[ToolCall]]:
-    before = state
+    before = clone_state(state)
     response = await model.acomplete(list(state.get("messages", [])), config)
     messages = list(state.get("messages", []))
     messages.append(response.message)
@@ -92,7 +92,7 @@ def action_step(
     *,
     event_sink: EventSink | None = None,
 ) -> AgentState:
-    before = state
+    before = clone_state(state)
     tool_call_dicts = cast(list[dict[str, Any]], list(tool_calls))
     state, results = executor.execute_calls(
         state, tool_call_dicts, config, event_sink=event_sink
@@ -117,7 +117,7 @@ async def aaction_step(
     *,
     event_sink: EventSink | None = None,
 ) -> AgentState:
-    before = state
+    before = clone_state(state)
     tool_call_dicts = cast(list[dict[str, Any]], list(tool_calls))
     state, results = await executor.aexecute_calls(
         state, tool_call_dicts, config, event_sink=event_sink
