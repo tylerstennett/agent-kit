@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling>=1.24.0,<2.0.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agent-kit"
+version = "0.1.0"
+description = "Composable toolkit for building LangGraph-powered agents"
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+license = { file = "LICENSE" }
+authors = [{ name = "Agent Kit Contributors" }]
+dependencies = [
+  "langchain-core>=0.3.0,<0.4.0",
+  "langgraph>=0.2.0,<0.3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "mypy>=1.11.0,<2.0.0",
+  "pytest>=8.3.0,<9.0.0",
+  "pytest-asyncio>=0.24.0,<0.25.0",
+  "ruff>=0.6.0,<0.7.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agent_kit"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+
+[tool.pytest.ini_options]
+addopts = "-q"
+asyncio_mode = "auto"
