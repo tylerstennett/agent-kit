@@ -4,10 +4,13 @@ from .config import (
     GraphBuildConfig,
     InvocationConfig,
     InvocationRequest,
+    ToolBindingMode,
     ToolDecision,
     ToolError,
     ToolResult,
+    ToolSchemaSyncPolicy,
 )
+from .errors import ModelToolBindingError, ToolSchemaConversionError, ToolValidationError
 from .events import (
     ErrorEvent,
     LLMTokenEvent,
@@ -34,6 +37,7 @@ __all__ = [
     "LLMTokenEvent",
     "MetricsMiddleware",
     "NestedAgentPolicy",
+    "ModelToolBindingError",
     "RetryMiddleware",
     "RunEndEvent",
     "RunStartEvent",
@@ -46,7 +50,11 @@ __all__ = [
     "ToolExecutor",
     "ToolRegistry",
     "ToolResult",
+    "ToolSchemaConversionError",
+    "ToolSchemaSyncPolicy",
     "ToolStartEvent",
+    "ToolValidationError",
+    "ToolBindingMode",
     "agent_as_tool",
     "logging_middleware",
     "tool",

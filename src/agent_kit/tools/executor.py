@@ -317,6 +317,8 @@ class ToolExecutor:
             state, result = maybe_await_sync(tool.apost_execute(state, result))
         except ToolValidationError as exc:
             result = tool.normalize_failure(context.call_id, exc, started, code="validation_error")
+            if result.error is not None and exc.details:
+                result.error.details.update(exc.details)
         except Exception as exc:
             result = tool.normalize_failure(context.call_id, exc, started, code="execution_error")
 
@@ -369,6 +371,8 @@ class ToolExecutor:
             state, result = await tool.apost_execute(state, result)
         except ToolValidationError as exc:
             result = tool.normalize_failure(context.call_id, exc, started, code="validation_error")
+            if result.error is not None and exc.details:
+                result.error.details.update(exc.details)
         except Exception as exc:
             result = tool.normalize_failure(context.call_id, exc, started, code="execution_error")
 

@@ -14,6 +14,8 @@ else:
 
 ToolStatus = Literal["success", "failed", "skipped"]
 ExecutionMode = Literal["sequential", "parallel"]
+ToolBindingMode = Literal["auto", "manual", "off"]
+ToolSchemaSyncPolicy = Literal["strict", "warn", "ignore"]
 
 
 @dataclass(slots=True)
@@ -65,6 +67,7 @@ class InvocationConfig:
     tags: list[str] = field(default_factory=list)
     max_parallel_workers: int | None = None
     emit_llm_tokens: bool = True
+    validation_repair_turns: int | None = None
 
 
 @dataclass(slots=True)
@@ -82,6 +85,7 @@ class GraphBuildConfig:
     max_steps: int = 25
     default_execution_mode: ExecutionMode = "sequential"
     max_parallel_workers: int = 4
+    default_validation_repair_turns: int = 1
     checkpointer: Any | None = None
     model_config_overrides: dict[str, Any] = field(default_factory=dict)
 
@@ -90,6 +94,8 @@ class GraphBuildConfig:
 class AgentConfig:
     default_metadata: dict[str, Any] = field(default_factory=dict)
     graph_config: GraphBuildConfig = field(default_factory=GraphBuildConfig)
+    model_tool_binding_mode: ToolBindingMode = "auto"
+    tool_schema_sync_policy: ToolSchemaSyncPolicy = "strict"
     before_tool_hooks: list[BeforeToolHook] = field(default_factory=list)
     after_tool_hooks: list[AfterToolHook] = field(default_factory=list)
     middlewares: list[Middleware] = field(default_factory=list)

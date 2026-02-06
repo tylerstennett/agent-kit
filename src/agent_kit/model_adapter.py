@@ -5,7 +5,6 @@ from dataclasses import dataclass, field
 from typing import Any, Protocol, TypedDict, cast
 from uuid import uuid4
 
-from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.runnables.config import RunnableConfig
 
@@ -33,9 +32,27 @@ class ModelAdapter(Protocol):
     ) -> ModelResponse: ...
 
 
+class RunnableLike(Protocol):
+    def invoke(
+        self,
+        input: object,
+        config: RunnableConfig | None = None,
+        **kwargs: object,
+    ) -> BaseMessage: ...
+
+    async def ainvoke(
+        self,
+        input: object,
+        config: RunnableConfig | None = None,
+        **kwargs: object,
+    ) -> BaseMessage: ...
+
+
 class LangChainModelAdapter:
-    def __init__(self, model: BaseChatModel) -> None:
-        self._model = model
+    def __init__(self, model: object) -> None:
+        if not hasattr(model, "invoke") or not hasattr(model, "ainvoke"):
+            raise TypeError("LangChainModelAdapter requires a model with invoke and ainvoke.")
+        self._model = cast(RunnableLike, model)
 
     def complete(self, messages: list[BaseMessage], config: InvocationConfig) -> ModelResponse:
         config_map = self._build_config(config)
@@ -70,10 +87,13 @@ class LangChainModelAdapter:
             configurable["thread_id"] = config.thread_id
         return cast(RunnableConfig, built)
 
-    def _to_ai_message(self, response: BaseMessage) -> AIMessage:
+    def _to_ai_message(self, response: object) -> AIMessage:
         if isinstance(response, AIMessage):
             return response
-        return AIMessage(content=str(response.content))
+        if isinstance(response, BaseMessage):
+            return AIMessage(content=str(response.content))
+        content = getattr(response, "content", response)
+        return AIMessage(content=str(content))
 
     def _extract_tokens(self, message: AIMessage) -> list[str]:
         if isinstance(message.content, str) and message.content:

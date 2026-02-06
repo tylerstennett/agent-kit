@@ -43,6 +43,14 @@ def _matches_type(value: Any, annotation: Any) -> bool:
     return True
 
 
+def _annotation_label(annotation: object) -> str:
+    if annotation is inspect.Signature.empty:
+        return "Any"
+    if hasattr(annotation, "__name__"):
+        return str(annotation.__name__)
+    return str(annotation)
+
+
 def infer_argument_specs(func: Callable[..., Any]) -> dict[str, ArgumentSpec]:
     signature = inspect.signature(func)
     try:
@@ -70,16 +78,38 @@ def validate_args(
 ) -> None:
     unknown = [key for key in args if key not in specs]
     if unknown and not allow_extra:
-        raise ToolValidationError(f"Unexpected arguments: {', '.join(sorted(unknown))}")
+        unknown_sorted = sorted(unknown)
+        raise ToolValidationError(
+            f"Unexpected arguments: {', '.join(unknown_sorted)}",
+            details={
+                "kind": "unexpected_args",
+                "unexpected": unknown_sorted,
+            },
+        )
     missing = [name for name, spec in specs.items() if spec.required and name not in args]
     if missing:
-        raise ToolValidationError(f"Missing required arguments: {', '.join(sorted(missing))}")
+        missing_sorted = sorted(missing)
+        raise ToolValidationError(
+            f"Missing required arguments: {', '.join(missing_sorted)}",
+            details={
+                "kind": "missing_args",
+                "missing": missing_sorted,
+            },
+        )
     for name, value in args.items():
         if allow_extra and name not in specs:
             continue
         spec = specs[name]
         if not _matches_type(value, spec.annotation):
-            raise ToolValidationError(f"Invalid argument type for '{name}'")
+            raise ToolValidationError(
+                f"Invalid argument type for '{name}'",
+                details={
+                    "kind": "invalid_type",
+                    "arg_name": name,
+                    "expected": _annotation_label(spec.annotation),
+                    "actual_type": type(value).__name__,
+                },
+            )
 
 
 class BaseTool(ABC):

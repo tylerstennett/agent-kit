@@ -24,7 +24,9 @@ from .model_adapter import LangChainModelAdapter, ModelAdapter
 from .nested import NestedAgentPolicy, agent_as_tool
 from .state import AgentState
 from .tools.base import BaseTool
+from .tools.model_binding import bind_model_tools
 from .tools.registry import ToolRegistry
+from .tools.schema import tool_schema_signature, tools_to_model_schemas
 from .utils.state_utils import merge_metadata
 
 
@@ -39,7 +41,9 @@ class Agent:
     ) -> None:
         self._config = config or AgentConfig()
         self._graph_builder = graph_builder or ReActGraphBuilder()
-        self._model_adapter = self._normalize_model(model)
+        self._model_source = model
+        self._model_adapter: ModelAdapter | None = None
+        self._last_tool_schema_signature: str | None = None
         self._registry = ToolRegistry(tools or [])
         self._compiled: CompiledGraph | None = None
         self._dirty = True
@@ -52,6 +56,10 @@ class Agent:
     @property
     def tools(self) -> list[BaseTool]:
         return self._registry.values()
+
+    @property
+    def last_tool_schema_signature(self) -> str | None:
+        return self._last_tool_schema_signature
 
     def add_tool(self, tool: BaseTool) -> None:
         self._registry.add_tool(tool)
@@ -225,21 +233,45 @@ class Agent:
     def _compiled_graph(self) -> CompiledGraph:
         with self._compile_lock:
             if self._compiled is None or self._dirty:
+                tools = self._registry.values()
+                model_adapter = self._resolve_model_adapter(tools)
                 self._compiled = self._graph_builder.build(
-                    self._model_adapter,
-                    self._registry.values(),
+                    model_adapter,
+                    tools,
                     self._config.graph_config,
                     before_hooks=self._config.before_tool_hooks,
                     after_hooks=self._config.after_tool_hooks,
                     middlewares=self._config.middlewares,
                 )
+                self._model_adapter = model_adapter
                 self._dirty = False
             return self._compiled
 
-    def _normalize_model(self, model: BaseChatModel | ModelAdapter) -> ModelAdapter:
+    def _resolve_model_adapter(self, tools: list[BaseTool]) -> ModelAdapter:
+        model = self._model_source
         if isinstance(model, BaseChatModel):
-            return LangChainModelAdapter(model)
+            return self._resolve_langchain_model(model, tools)
+        self._last_tool_schema_signature = None
         return model
+
+    def _resolve_langchain_model(self, model: BaseChatModel, tools: list[BaseTool]) -> ModelAdapter:
+        mode = self._config.model_tool_binding_mode
+        if mode == "auto":
+            if not tools:
+                self._last_tool_schema_signature = None
+                return LangChainModelAdapter(model)
+            schemas = tools_to_model_schemas(tools, policy=self._config.tool_schema_sync_policy)
+            bound_model = bind_model_tools(
+                model,
+                tools,
+                self._config.tool_schema_sync_policy,
+                schemas=schemas,
+            )
+            self._last_tool_schema_signature = tool_schema_signature(schemas)
+            return LangChainModelAdapter(bound_model)
+
+        self._last_tool_schema_signature = None
+        return LangChainModelAdapter(model)
 
     def _mark_dirty(self) -> None:
         with self._compile_lock:
