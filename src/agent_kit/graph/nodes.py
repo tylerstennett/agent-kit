@@ -91,7 +91,7 @@ def action_step(
     config: InvocationConfig,
     *,
     event_sink: EventSink | None = None,
-) -> AgentState:
+) -> tuple[AgentState, list[ToolResult]]:
     before = clone_state(state)
     tool_call_dicts = cast(list[dict[str, Any]], list(tool_calls))
     state, results = executor.execute_calls(
@@ -106,7 +106,7 @@ def action_step(
     state["tool_outputs"] = tool_outputs
     if event_sink:
         event_sink(StateUpdateEvent(run_id="", delta=state_delta(before, state)))
-    return state
+    return state, results
 
 
 async def aaction_step(
@@ -116,7 +116,7 @@ async def aaction_step(
     config: InvocationConfig,
     *,
     event_sink: EventSink | None = None,
-) -> AgentState:
+) -> tuple[AgentState, list[ToolResult]]:
     before = clone_state(state)
     tool_call_dicts = cast(list[dict[str, Any]], list(tool_calls))
     state, results = await executor.aexecute_calls(
@@ -131,7 +131,7 @@ async def aaction_step(
     state["tool_outputs"] = tool_outputs
     if event_sink:
         event_sink(StateUpdateEvent(run_id="", delta=state_delta(before, state)))
-    return state
+    return state, results
 
 
 def has_tool_calls(message: AIMessage | None) -> bool:

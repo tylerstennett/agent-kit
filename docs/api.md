@@ -4,6 +4,8 @@
 
 - `agent_kit.Agent`: top-level orchestration API.
 - `agent_kit.AgentConfig`: agent configuration.
+- `agent_kit.ToolBindingMode`: `"auto" | "manual" | "off"`.
+- `agent_kit.ToolSchemaSyncPolicy`: `"strict" | "warn" | "ignore"`.
 - `agent_kit.InvocationRequest`: flexible invocation input object.
 - `agent_kit.InvocationConfig`: per-invocation behavior settings.
 
@@ -13,6 +15,14 @@
 - `agent_kit.tool`: decorator for function tools.
 - `agent_kit.ToolResult`: normalized tool execution result.
 - `agent_kit.ToolDecision`: pre-execute control signal (`continue` or `skip`).
+
+Tool validation failures use `ToolError(code="validation_error")` and include structured
+`details` payloads with:
+
+- `kind`: `unexpected_args` | `missing_args` | `invalid_type`
+- `unexpected`: list of unknown argument names
+- `missing`: list of missing required argument names
+- `arg_name`, `expected`, `actual_type` for type mismatches
 
 ## Middleware
 
@@ -37,3 +47,9 @@ Streaming emits typed events:
 - `StateUpdateEvent`
 - `RunEndEvent`
 - `ErrorEvent`
+
+## Errors
+
+- `agent_kit.ModelToolBindingError`: raised when auto-binding fails or is unsupported.
+- `agent_kit.ToolSchemaConversionError`: raised for unsupported strict schema conversion.
+- `agent_kit.ToolValidationError`: validation exception with optional `details`.

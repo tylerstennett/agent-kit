@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Any, cast
 from uuid import uuid4
 
-from ..config import GraphBuildConfig, InvocationConfig
+from ..config import GraphBuildConfig, InvocationConfig, ToolResult
 from ..events import ErrorEvent, RunEndEvent, RunStartEvent, StateUpdateEvent, StreamEvent
 from ..model_adapter import ModelAdapter
 from ..state import AgentState
@@ -25,6 +25,13 @@ def _set_termination(state: AgentState, reason: str, steps: int) -> AgentState:
     return state
 
 
+def _has_validation_error(results: list[ToolResult]) -> bool:
+    for result in results:
+        if result.error is not None and result.error.code == "validation_error":
+            return True
+    return False
+
+
 @dataclass(slots=True)
 class ReActCompiledGraph:
     model: ModelAdapter
@@ -32,6 +39,10 @@ class ReActCompiledGraph:
     config: GraphBuildConfig
 
     def _effective_config(self, invocation_config: InvocationConfig) -> InvocationConfig:
+        validation_repair_turns = invocation_config.validation_repair_turns
+        if validation_repair_turns is None:
+            validation_repair_turns = self.config.default_validation_repair_turns
+        validation_repair_turns = max(validation_repair_turns, 0)
         effective = InvocationConfig(
             execution_mode=invocation_config.execution_mode or self.config.default_execution_mode,
             recursion_limit=invocation_config.recursion_limit,
@@ -43,34 +54,53 @@ class ReActCompiledGraph:
             max_parallel_workers=invocation_config.max_parallel_workers
             or self.config.max_parallel_workers,
             emit_llm_tokens=invocation_config.emit_llm_tokens,
+            validation_repair_turns=validation_repair_turns,
         )
         return effective
 
     def invoke(self, state: AgentState, config: InvocationConfig) -> AgentState:
         effective = self._effective_config(config)
         max_steps = effective.max_steps or self.config.max_steps
+        repair_budget = effective.validation_repair_turns or 0
+        consecutive_validation_failures = 0
         current = clone_state(state)
         for step in range(max_steps):
             current, tool_calls = reasoning_step(current, self.model, effective)
             if not tool_calls:
                 return _set_termination(current, "completed", step + 1)
-            current = action_step(current, tool_calls, self.executor, effective)
+            current, results = action_step(current, tool_calls, self.executor, effective)
+            if _has_validation_error(results):
+                consecutive_validation_failures += 1
+                if consecutive_validation_failures > repair_budget:
+                    return _set_termination(current, "validation_repair_exhausted", step + 1)
+            else:
+                consecutive_validation_failures = 0
         return _set_termination(current, "max_steps_reached", max_steps)
 
     async def ainvoke(self, state: AgentState, config: InvocationConfig) -> AgentState:
         effective = self._effective_config(config)
         max_steps = effective.max_steps or self.config.max_steps
+        repair_budget = effective.validation_repair_turns or 0
+        consecutive_validation_failures = 0
         current = clone_state(state)
         for step in range(max_steps):
             current, tool_calls = await areasoning_step(current, self.model, effective)
             if not tool_calls:
                 return _set_termination(current, "completed", step + 1)
-            current = await aaction_step(current, tool_calls, self.executor, effective)
+            current, results = await aaction_step(current, tool_calls, self.executor, effective)
+            if _has_validation_error(results):
+                consecutive_validation_failures += 1
+                if consecutive_validation_failures > repair_budget:
+                    return _set_termination(current, "validation_repair_exhausted", step + 1)
+            else:
+                consecutive_validation_failures = 0
         return _set_termination(current, "max_steps_reached", max_steps)
 
     def stream(self, state: AgentState, config: InvocationConfig) -> Iterator[StreamEvent]:
         effective = self._effective_config(config)
         max_steps = effective.max_steps or self.config.max_steps
+        repair_budget = effective.validation_repair_turns or 0
+        consecutive_validation_failures = 0
         run_id = uuid4().hex
         current = clone_state(state)
         pending: list[StreamEvent] = []
@@ -93,11 +123,18 @@ class ReActCompiledGraph:
                 if not tool_calls:
                     current = _set_termination(current, "completed", step + 1)
                     break
-                current = action_step(
+                current, results = action_step(
                     current, tool_calls, self.executor, effective, event_sink=sink
                 )
                 while pending:
                     yield pending.pop(0)
+                if _has_validation_error(results):
+                    consecutive_validation_failures += 1
+                    if consecutive_validation_failures > repair_budget:
+                        current = _set_termination(current, "validation_repair_exhausted", step + 1)
+                        break
+                else:
+                    consecutive_validation_failures = 0
             else:
                 current = _set_termination(current, "max_steps_reached", max_steps)
         except Exception as exc:
@@ -110,6 +147,8 @@ class ReActCompiledGraph:
     ) -> AsyncIterator[StreamEvent]:
         effective = self._effective_config(config)
         max_steps = effective.max_steps or self.config.max_steps
+        repair_budget = effective.validation_repair_turns or 0
+        consecutive_validation_failures = 0
         run_id = uuid4().hex
         current = clone_state(state)
         pending: list[StreamEvent] = []
@@ -132,11 +171,18 @@ class ReActCompiledGraph:
                 if not tool_calls:
                     current = _set_termination(current, "completed", step + 1)
                     break
-                current = await aaction_step(
+                current, results = await aaction_step(
                     current, tool_calls, self.executor, effective, event_sink=sink
                 )
                 while pending:
                     yield pending.pop(0)
+                if _has_validation_error(results):
+                    consecutive_validation_failures += 1
+                    if consecutive_validation_failures > repair_budget:
+                        current = _set_termination(current, "validation_repair_exhausted", step + 1)
+                        break
+                else:
+                    consecutive_validation_failures = 0
             else:
                 current = _set_termination(current, "max_steps_reached", max_steps)
         except Exception as exc:
