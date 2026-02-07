@@ -7,11 +7,11 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
-from .config import ToolError, ToolResult
-from .utils.async_utils import maybe_await, maybe_await_sync
+from agent_kit.config import ToolError, ToolResult
+from agent_kit.utils.async_utils import maybe_await, maybe_await_sync
 
 if TYPE_CHECKING:
-    from .state import AgentState
+    from agent_kit.state import AgentState
 
 
 @dataclass(slots=True)
@@ -142,7 +142,7 @@ class TimeoutMiddleware:
             return await asyncio.wait_for(
                 maybe_await(next_call(context)), timeout=self.timeout_seconds
             )
-        except TimeoutError:
+        except (TimeoutError, asyncio.TimeoutError):
             state = context.state
             result = ToolResult(
                 tool_name=context.tool_name,

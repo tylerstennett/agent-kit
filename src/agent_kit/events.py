@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
-from .config import ToolResult
+from agent_kit.config import ToolResult
 
 
 @dataclass(slots=True)

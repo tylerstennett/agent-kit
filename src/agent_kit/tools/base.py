@@ -9,9 +9,9 @@ from dataclasses import dataclass
 from typing import Any, Union, get_args, get_origin, get_type_hints
 from uuid import uuid4
 
-from ..config import ToolDecision, ToolError, ToolResult
-from ..errors import ToolValidationError
-from ..state import AgentState
+from agent_kit.config import ToolDecision, ToolError, ToolResult
+from agent_kit.errors import ToolValidationError
+from agent_kit.state import AgentState
 
 
 @dataclass(slots=True)

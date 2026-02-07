@@ -4,10 +4,10 @@ import inspect
 from collections.abc import Awaitable, Callable
 from typing import Any, TypeVar
 
-from ..config import ToolDecision, ToolResult
-from ..state import AgentState
-from ..utils.async_utils import maybe_await, maybe_await_sync
-from .base import ArgumentSpec, BaseTool, infer_argument_specs
+from agent_kit.config import ToolDecision, ToolResult
+from agent_kit.state import AgentState
+from agent_kit.tools.base import ArgumentSpec, BaseTool, infer_argument_specs
+from agent_kit.utils.async_utils import maybe_await, maybe_await_sync
 
 ToolCallable = Callable[..., Any]
 PreHook = Callable[[AgentState], ToolDecision | Awaitable[ToolDecision]]

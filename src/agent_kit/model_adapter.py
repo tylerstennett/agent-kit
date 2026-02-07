@@ -8,7 +8,7 @@ from uuid import uuid4
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.runnables.config import RunnableConfig
 
-from .config import InvocationConfig
+from agent_kit.config import InvocationConfig
 
 
 class ToolCall(TypedDict):

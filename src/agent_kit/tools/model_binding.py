@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from langchain_core.language_models.chat_models import BaseChatModel
 
-from ..config import ToolSchemaSyncPolicy
-from ..errors import ModelToolBindingError
-from .base import BaseTool
-from .schema import tools_to_model_schemas
+from agent_kit.config import ToolSchemaSyncPolicy
+from agent_kit.errors import ModelToolBindingError
+from agent_kit.tools.base import BaseTool
+from agent_kit.tools.schema import tools_to_model_schemas
 
 
 def bind_model_tools(

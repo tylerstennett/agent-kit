@@ -1,7 +1,7 @@
-from .base import BaseTool
-from .decorator import FunctionTool, tool
-from .executor import ToolExecutor
-from .registry import ToolRegistry
+from agent_kit.tools.base import BaseTool
+from agent_kit.tools.decorator import FunctionTool, tool
+from agent_kit.tools.executor import ToolExecutor
+from agent_kit.tools.registry import ToolRegistry
 
 __all__ = [
     "BaseTool",
