@@ -6,13 +6,13 @@ from typing import TYPE_CHECKING, Any, Literal, Protocol, cast
 
 from langchain_core.messages import AIMessage, BaseMessage
 
-from .config import InvocationConfig, InvocationRequest, ToolResult
-from .state import AgentState
-from .tools.base import BaseTool
-from .utils.state_utils import merge_metadata
+from agent_kit.config import InvocationConfig, InvocationRequest, ToolResult
+from agent_kit.state import AgentState
+from agent_kit.tools.base import BaseTool
+from agent_kit.utils.state_utils import merge_metadata
 
 if TYPE_CHECKING:
-    from .agent import Agent
+    from agent_kit.agent import Agent
 
 StateBridgeMode = Literal["copy_merge", "shared", "isolated"]
 MessageMergeMode = Literal["final_with_transcript", "inline_all", "none"]

@@ -5,7 +5,7 @@ from typing import Annotated, Any, TypedDict
 
 from langchain_core.messages import BaseMessage
 
-from .config import ToolResult
+from agent_kit.config import ToolResult
 
 
 def append_messages(current: list[BaseMessage], update: Sequence[BaseMessage]) -> list[BaseMessage]:

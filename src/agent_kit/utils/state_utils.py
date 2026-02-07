@@ -6,8 +6,8 @@ from typing import Any
 
 from langchain_core.messages import BaseMessage
 
-from ..config import ToolResult
-from ..state import AgentState
+from agent_kit.config import ToolResult
+from agent_kit.state import AgentState
 
 
 def merge_metadata(base: dict[str, Any], update: dict[str, Any]) -> dict[str, Any]:

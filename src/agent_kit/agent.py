@@ -7,7 +7,7 @@ from typing import Any
 
 from langchain_core.language_models.chat_models import BaseChatModel
 
-from .config import (
+from agent_kit.config import (
     AfterToolHook,
     AgentConfig,
     BeforeToolHook,
@@ -15,19 +15,19 @@ from .config import (
     InvocationConfig,
     InvocationRequest,
 )
-from .errors import SyncInAsyncContextError
-from .events import StreamEvent
-from .graph import CompiledGraph, GraphBuilder, ReActGraphBuilder
-from .invocation import build_initial_state, normalize_request
-from .middleware import Middleware
-from .model_adapter import LangChainModelAdapter, ModelAdapter
-from .nested import NestedAgentPolicy, agent_as_tool
-from .state import AgentState
-from .tools.base import BaseTool
-from .tools.model_binding import bind_model_tools
-from .tools.registry import ToolRegistry
-from .tools.schema import tool_schema_signature, tools_to_model_schemas
-from .utils.state_utils import merge_metadata
+from agent_kit.errors import SyncInAsyncContextError
+from agent_kit.events import StreamEvent
+from agent_kit.graph import CompiledGraph, GraphBuilder, ReActGraphBuilder
+from agent_kit.invocation import build_initial_state, normalize_request
+from agent_kit.middleware import Middleware
+from agent_kit.model_adapter import LangChainModelAdapter, ModelAdapter
+from agent_kit.nested import NestedAgentPolicy, agent_as_tool
+from agent_kit.state import AgentState
+from agent_kit.tools.base import BaseTool
+from agent_kit.tools.model_binding import bind_model_tools
+from agent_kit.tools.registry import ToolRegistry
+from agent_kit.tools.schema import tool_schema_signature, tools_to_model_schemas
+from agent_kit.utils.state_utils import merge_metadata
 
 
 class Agent:

@@ -1,5 +1,5 @@
-from .agent import Agent
-from .config import (
+from agent_kit.agent import Agent
+from agent_kit.config import (
     AgentConfig,
     GraphBuildConfig,
     InvocationConfig,
@@ -10,8 +10,8 @@ from .config import (
     ToolResult,
     ToolSchemaSyncPolicy,
 )
-from .errors import ModelToolBindingError, ToolSchemaConversionError, ToolValidationError
-from .events import (
+from agent_kit.errors import ModelToolBindingError, ToolSchemaConversionError, ToolValidationError
+from agent_kit.events import (
     ErrorEvent,
     LLMTokenEvent,
     RunEndEvent,
@@ -21,9 +21,14 @@ from .events import (
     ToolEndEvent,
     ToolStartEvent,
 )
-from .middleware import MetricsMiddleware, RetryMiddleware, TimeoutMiddleware, logging_middleware
-from .nested import NestedAgentPolicy, agent_as_tool
-from .tools import BaseTool, FunctionTool, ToolExecutor, ToolRegistry, tool
+from agent_kit.middleware import (
+    MetricsMiddleware,
+    RetryMiddleware,
+    TimeoutMiddleware,
+    logging_middleware,
+)
+from agent_kit.nested import NestedAgentPolicy, agent_as_tool
+from agent_kit.tools import BaseTool, FunctionTool, ToolExecutor, ToolRegistry, tool
 
 __all__ = [
     "Agent",

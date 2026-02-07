@@ -7,9 +7,9 @@ import logging
 import types
 from typing import Any, Literal, Union, get_args, get_origin
 
-from ..config import ToolSchemaSyncPolicy
-from ..errors import ToolSchemaConversionError
-from .base import BaseTool
+from agent_kit.config import ToolSchemaSyncPolicy
+from agent_kit.errors import ToolSchemaConversionError
+from agent_kit.tools.base import BaseTool
 
 logger = logging.getLogger(__name__)
 

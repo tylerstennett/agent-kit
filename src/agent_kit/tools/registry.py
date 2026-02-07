@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-from .base import BaseTool
+from agent_kit.tools.base import BaseTool
 
 
 class ToolRegistry:

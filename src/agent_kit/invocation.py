@@ -6,9 +6,9 @@ from typing import Any
 
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 
-from .config import InvocationConfig, InvocationRequest
-from .errors import InvocationValidationError
-from .state import AgentState, make_initial_state
+from agent_kit.config import InvocationConfig, InvocationRequest
+from agent_kit.errors import InvocationValidationError
+from agent_kit.state import AgentState, make_initial_state
 
 
 def normalize_request(
