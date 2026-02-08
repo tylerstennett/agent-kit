@@ -5,7 +5,7 @@ from typing import Any
 
 from langchain_core.messages import AIMessage, BaseMessage
 
-from agent_kit.model_adapter import ModelResponse, ToolCall
+from agent_kit.llm.types import ModelResponse, ToolCall
 from agent_kit.state import AgentState
 from agent_kit.tools.base import BaseTool
 

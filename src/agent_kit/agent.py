@@ -5,6 +5,8 @@ import threading
 from collections.abc import AsyncIterator, Iterator
 from typing import Any
 
+from conduit import Conduit, SyncConduit
+from conduit.tools.schema import ToolDefinition
 from langchain_core.language_models.chat_models import BaseChatModel
 
 from agent_kit.config import (
@@ -19,8 +21,13 @@ from agent_kit.errors import SyncInAsyncContextError
 from agent_kit.events import StreamEvent
 from agent_kit.graph import CompiledGraph, GraphBuilder, ReActGraphBuilder
 from agent_kit.invocation import build_initial_state, normalize_request
+from agent_kit.llm import (
+    ConduitModelAdapter,
+    LangChainModelAdapter,
+    ModelAdapter,
+    tool_schemas_to_conduit_tools,
+)
 from agent_kit.middleware import Middleware
-from agent_kit.model_adapter import LangChainModelAdapter, ModelAdapter
 from agent_kit.nested import NestedAgentPolicy, agent_as_tool
 from agent_kit.state import AgentState
 from agent_kit.tools.base import BaseTool
@@ -34,7 +41,7 @@ class Agent:
     def __init__(
         self,
         *,
-        model: BaseChatModel | ModelAdapter,
+        model: BaseChatModel | Conduit | SyncConduit | ModelAdapter,
         tools: list[BaseTool] | None = None,
         graph_builder: GraphBuilder | None = None,
         config: AgentConfig | None = None,
@@ -251,6 +258,8 @@ class Agent:
         model = self._model_source
         if isinstance(model, BaseChatModel):
             return self._resolve_langchain_model(model, tools)
+        if isinstance(model, Conduit | SyncConduit):
+            return self._resolve_conduit_model(model, tools)
         self._last_tool_schema_signature = None
         return model
 
@@ -272,6 +281,19 @@ class Agent:
 
         self._last_tool_schema_signature = None
         return LangChainModelAdapter(model)
+
+    def _resolve_conduit_model(
+        self, model: Conduit | SyncConduit, tools: list[BaseTool]
+    ) -> ModelAdapter:
+        mode = self._config.model_tool_binding_mode
+        conduit_tools: list[ToolDefinition] | None = None
+        if mode == "auto" and tools:
+            schemas = tools_to_model_schemas(tools, policy=self._config.tool_schema_sync_policy)
+            conduit_tools = tool_schemas_to_conduit_tools(schemas)
+            self._last_tool_schema_signature = tool_schema_signature(schemas)
+        else:
+            self._last_tool_schema_signature = None
+        return ConduitModelAdapter(model, tools=conduit_tools)
 
     def _mark_dirty(self) -> None:
         with self._compile_lock:

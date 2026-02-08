@@ -9,7 +9,7 @@ from agent_kit.config import GraphBuildConfig, InvocationConfig, ToolResult
 from agent_kit.events import ErrorEvent, RunEndEvent, RunStartEvent, StateUpdateEvent, StreamEvent
 from agent_kit.graph.base import CompiledGraph, GraphBuilder
 from agent_kit.graph.nodes import aaction_step, action_step, areasoning_step, reasoning_step
-from agent_kit.model_adapter import ModelAdapter
+from agent_kit.llm.types import ModelAdapter
 from agent_kit.state import AgentState
 from agent_kit.tools.base import BaseTool
 from agent_kit.tools.executor import ToolExecutor

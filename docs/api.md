@@ -9,6 +9,22 @@
 - `agent_kit.InvocationRequest`: flexible invocation input object.
 - `agent_kit.InvocationConfig`: per-invocation behavior settings.
 
+`Agent.model` accepts:
+
+- LangChain `BaseChatModel`
+- `llm-conduit` `Conduit` (async-only)
+- `llm-conduit` `SyncConduit` (sync-only)
+- Any custom `agent_kit.llm.ModelAdapter`
+
+## LLM Adapters
+
+- `agent_kit.llm.ModelAdapter`: protocol for sync/async completion.
+- `agent_kit.llm.ModelResponse`: normalized model response payload.
+- `agent_kit.llm.ToolCall`: normalized tool call payload (`id`, `name`, `args`).
+- `agent_kit.llm.LangChainModelAdapter`: adapter for LangChain runnable chat models.
+- `agent_kit.llm.ConduitModelAdapter`: adapter for `llm-conduit` models.
+- `agent_kit.model_adapter` is no longer the canonical adapter module path.
+
 ## Tools
 
 - `agent_kit.BaseTool`: class-based stateful tool base class.
