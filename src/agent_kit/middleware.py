@@ -142,7 +142,7 @@ class TimeoutMiddleware:
             return await asyncio.wait_for(
                 maybe_await(next_call(context)), timeout=self.timeout_seconds
             )
-        except (TimeoutError, asyncio.TimeoutError):
+        except TimeoutError:
             state = context.state
             result = ToolResult(
                 tool_name=context.tool_name,

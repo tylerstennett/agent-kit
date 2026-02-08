@@ -8,7 +8,7 @@ from langchain_core.messages import AIMessage, ToolMessage
 
 from agent_kit.config import InvocationConfig, ToolResult
 from agent_kit.events import LLMTokenEvent, StateUpdateEvent
-from agent_kit.model_adapter import ModelAdapter, ToolCall
+from agent_kit.llm.types import ModelAdapter, ToolCall
 from agent_kit.state import AgentState
 from agent_kit.tools.executor import ToolExecutor
 from agent_kit.utils.state_utils import clone_state, state_delta

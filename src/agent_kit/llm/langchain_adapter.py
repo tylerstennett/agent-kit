@@ -1,35 +1,14 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
-from typing import Any, Protocol, TypedDict, cast
+from typing import Any, Protocol, cast
 from uuid import uuid4
 
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.runnables.config import RunnableConfig
 
 from agent_kit.config import InvocationConfig
-
-
-class ToolCall(TypedDict):
-    id: str
-    name: str
-    args: dict[str, Any]
-
-
-@dataclass(slots=True)
-class ModelResponse:
-    message: AIMessage
-    tool_calls: list[ToolCall] = field(default_factory=list)
-    tokens: list[str] = field(default_factory=list)
-
-
-class ModelAdapter(Protocol):
-    def complete(self, messages: list[BaseMessage], config: InvocationConfig) -> ModelResponse: ...
-
-    async def acomplete(
-        self, messages: list[BaseMessage], config: InvocationConfig
-    ) -> ModelResponse: ...
+from agent_kit.llm.types import ModelResponse, ToolCall
 
 
 class RunnableLike(Protocol):

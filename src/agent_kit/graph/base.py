@@ -5,7 +5,7 @@ from typing import Any, Protocol
 
 from agent_kit.config import GraphBuildConfig, InvocationConfig
 from agent_kit.events import StreamEvent
-from agent_kit.model_adapter import ModelAdapter
+from agent_kit.llm.types import ModelAdapter
 from agent_kit.state import AgentState
 from agent_kit.tools.base import BaseTool
 
