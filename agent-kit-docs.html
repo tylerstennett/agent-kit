@@ -1,0 +1,1473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Kit &mdash; Architecture &amp; API Reference</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg-card: #161b22;
+    --bg-code: #1c2128;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --accent: #58a6ff;
+    --accent2: #3fb950;
+    --accent3: #d2a8ff;
+    --accent4: #f78166;
+    --accent5: #f0e68c;
+    --accent6: #79c0ff;
+    --link: #58a6ff;
+    --nav-bg: #0d1117;
+    --nav-active: rgba(88,166,255,0.12);
+    --tag-bg: rgba(88,166,255,0.15);
+    --highlight: rgba(88,166,255,0.08);
+    --scrollbar: #30363d;
+    --scrollbar-thumb: #484f58;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    display: flex;
+    min-height: 100vh;
+  }
+
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+
+  /* ── SIDEBAR NAV ── */
+  nav {
+    width: 280px;
+    min-width: 280px;
+    background: var(--nav-bg);
+    border-right: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 24px 0;
+    z-index: 10;
+  }
+
+  nav .logo {
+    padding: 0 20px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+
+  nav .logo h1 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.3px;
+  }
+
+  nav .logo .version {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  nav .nav-group { margin-bottom: 8px; }
+
+  nav .nav-group-title {
+    padding: 8px 20px 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+  }
+
+  nav a {
+    display: block;
+    padding: 6px 20px 6px 28px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 13.5px;
+    border-left: 2px solid transparent;
+    transition: all 0.15s;
+  }
+
+  nav a:hover,
+  nav a.active {
+    color: var(--accent);
+    background: var(--nav-active);
+    border-left-color: var(--accent);
+  }
+
+  /* ── MAIN CONTENT ── */
+  main {
+    flex: 1;
+    max-width: 960px;
+    padding: 40px 48px 80px;
+    margin: 0 auto;
+  }
+
+  h2 {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 56px 0 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    scroll-margin-top: 24px;
+  }
+
+  h3 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 36px 0 8px;
+    color: var(--accent6);
+    scroll-margin-top: 24px;
+  }
+
+  h4 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 24px 0 6px;
+    color: var(--accent3);
+  }
+
+  p { margin: 8px 0 12px; color: var(--text); }
+
+  ul, ol { margin: 8px 0 16px 24px; }
+  li { margin: 4px 0; }
+
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  code {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+    font-size: 13px;
+    background: var(--bg-code);
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+
+  pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    overflow-x: auto;
+    margin: 12px 0 20px;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  pre code {
+    background: none;
+    border: none;
+    padding: 0;
+  }
+
+  /* ── CARDS / BOXES ── */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin: 16px 0;
+  }
+
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin: 16px 0;
+  }
+
+  .card h4 { margin-top: 0; }
+
+  .highlight-box {
+    background: var(--highlight);
+    border-left: 3px solid var(--accent);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+  }
+
+  .warning-box {
+    background: rgba(247,129,102,0.08);
+    border-left: 3px solid var(--accent4);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    margin: 2px 4px 2px 0;
+  }
+
+  .tag-blue { background: rgba(88,166,255,0.15); color: var(--accent); }
+  .tag-green { background: rgba(63,185,80,0.15); color: var(--accent2); }
+  .tag-purple { background: rgba(210,168,255,0.15); color: var(--accent3); }
+  .tag-orange { background: rgba(247,129,102,0.15); color: var(--accent4); }
+  .tag-yellow { background: rgba(240,230,140,0.15); color: #e3d888; }
+
+  /* ── TABLE ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 20px;
+    font-size: 13.5px;
+  }
+
+  th, td {
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  th {
+    background: var(--bg-card);
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  tr:hover td { background: var(--highlight); }
+
+  /* ── DIAGRAM CONTAINER ── */
+  .diagram {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 32px 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+    text-align: center;
+  }
+
+  .diagram svg { max-width: 100%; }
+
+  /* ── FLOW DIAGRAM (CSS) ── */
+  .flow-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 6px 0;
+    flex-wrap: wrap;
+  }
+
+  .flow-box {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .flow-box.primary { background: rgba(88,166,255,0.15); color: var(--accent); border: 1px solid rgba(88,166,255,0.3); }
+  .flow-box.success { background: rgba(63,185,80,0.15); color: var(--accent2); border: 1px solid rgba(63,185,80,0.3); }
+  .flow-box.purple  { background: rgba(210,168,255,0.15); color: var(--accent3); border: 1px solid rgba(210,168,255,0.3); }
+  .flow-box.warn    { background: rgba(247,129,102,0.15); color: var(--accent4); border: 1px solid rgba(247,129,102,0.3); }
+  .flow-box.muted   { background: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border); }
+
+  .flow-arrow { color: var(--text-muted); font-size: 18px; user-select: none; }
+  .flow-arrow-down { display: block; text-align: center; color: var(--text-muted); font-size: 18px; margin: 2px 0; user-select: none; }
+
+  /* ── COLLAPSIBLE ── */
+  details {
+    margin: 8px 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  details > summary {
+    padding: 12px 16px;
+    cursor: pointer;
+    font-weight: 600;
+    background: var(--bg-card);
+    user-select: none;
+    font-size: 14px;
+  }
+
+  details > summary:hover { background: var(--highlight); }
+
+  details[open] > summary { border-bottom: 1px solid var(--border); }
+
+  details .detail-content { padding: 16px; }
+
+  /* ── HERO ── */
+  .hero {
+    text-align: center;
+    padding: 40px 0 20px;
+  }
+
+  .hero h1 {
+    font-size: 40px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+  }
+
+  .hero .subtitle {
+    font-size: 18px;
+    color: var(--text-muted);
+    max-width: 560px;
+    margin: 0 auto 24px;
+  }
+
+  .hero-badges {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-muted);
+  }
+
+  .badge .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .dot-blue { background: var(--accent); }
+  .dot-green { background: var(--accent2); }
+  .dot-purple { background: var(--accent3); }
+
+  /* ── FILE TREE ── */
+  .file-tree {
+    font-family: 'SF Mono', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text-muted);
+  }
+  .file-tree .dir { color: var(--accent); font-weight: 600; }
+  .file-tree .file { color: var(--text); }
+  .file-tree .comment { color: #484f58; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 860px) {
+    nav { display: none; }
+    main { padding: 24px 20px 60px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════ SIDEBAR ════════════════════ -->
+<nav>
+  <div class="logo">
+    <h1>Agent Kit</h1>
+    <div class="version">v0.1.0 &middot; Python 3.10+</div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">Overview</div>
+    <a href="#overview">Introduction</a>
+    <a href="#quickstart">Quickstart</a>
+    <a href="#project-structure">Project Structure</a>
+    <a href="#architecture">Architecture Diagram</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">Core</div>
+    <a href="#agent">Agent</a>
+    <a href="#config">Configuration</a>
+    <a href="#state">State Management</a>
+    <a href="#invocation">Invocation Pipeline</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">Tools</div>
+    <a href="#tools-overview">Tool System Overview</a>
+    <a href="#base-tool">BaseTool</a>
+    <a href="#decorator">@tool Decorator</a>
+    <a href="#tool-executor">ToolExecutor</a>
+    <a href="#tool-schema">Schema Generation</a>
+    <a href="#model-binding">Model Binding</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">Execution</div>
+    <a href="#react-graph">ReAct Graph</a>
+    <a href="#graph-nodes">Graph Nodes</a>
+    <a href="#events">Streaming Events</a>
+    <a href="#model-adapter">Model Adapter</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">Extension</div>
+    <a href="#middleware">Middleware</a>
+    <a href="#nested">Nested Agents</a>
+    <a href="#hooks">Hooks</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">Reference</div>
+    <a href="#errors">Errors</a>
+    <a href="#utilities">Utilities</a>
+    <a href="#design-decisions">Design Decisions</a>
+    <a href="#exports">Public Exports</a>
+  </div>
+</nav>
+
+<!-- ════════════════════ MAIN CONTENT ════════════════════ -->
+<main>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <h1>Agent Kit</h1>
+  <p class="subtitle">A composable, typed Python toolkit for building stateful, extensible agents on top of LangGraph concepts.</p>
+  <div class="hero-badges">
+    <span class="badge"><span class="dot dot-blue"></span> Python 3.10&ndash;3.12</span>
+    <span class="badge"><span class="dot dot-green"></span> LangChain Core &ge;0.3</span>
+    <span class="badge"><span class="dot dot-purple"></span> LangGraph &ge;0.2</span>
+    <span class="badge"><span class="dot dot-green"></span> mypy strict</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="overview">Introduction</h2>
+<p>
+  Agent Kit provides a <strong>typed, composable</strong> framework for building LLM-powered agents with a
+  <strong>ReAct reasoning loop</strong>, <strong>stateful tools</strong>, <strong>middleware pipelines</strong>,
+  and <strong>nested agent composition</strong>. Every component is designed as a protocol-driven,
+  swappable building block.
+</p>
+
+<div class="card-grid">
+  <div class="card">
+    <h4>Stateful Tools</h4>
+    <p>Tools receive the full <code>AgentState</code>, enabling rich inspection and mutation of the agent's context during execution.</p>
+  </div>
+  <div class="card">
+    <h4>Auto Tool Binding</h4>
+    <p>Automatic JSON schema generation and LLM binding with configurable sync policies (<code>strict</code>, <code>warn</code>, <code>ignore</code>).</p>
+  </div>
+  <div class="card">
+    <h4>Hooks &amp; Middleware</h4>
+    <p>Intercept tool execution with before/after hooks and composable middleware (logging, retry, timeout, metrics).</p>
+  </div>
+  <div class="card">
+    <h4>Nested Composition</h4>
+    <p>Wrap any agent as a tool with policy-driven state bridging, message merging, and depth tracking.</p>
+  </div>
+  <div class="card">
+    <h4>Sync + Async + Streaming</h4>
+    <p>Full API surface: <code>run</code> / <code>arun</code>, <code>invoke</code> / <code>ainvoke</code>, <code>stream</code> / <code>astream</code>.</p>
+  </div>
+  <div class="card">
+    <h4>Validation Repair</h4>
+    <p>Bounded retry budget for consecutive tool validation failures, preventing infinite error loops.</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="quickstart">Quickstart</h2>
+
+<pre><code><span style="color:var(--accent3)">from</span> agent_kit <span style="color:var(--accent3)">import</span> Agent, tool
+
+<span style="color:var(--accent)">@tool</span>(name=<span style="color:var(--accent2)">"echo"</span>)
+<span style="color:var(--accent3)">def</span> <span style="color:var(--accent6)">echo</span>(state, text: <span style="color:#79c0ff">str</span>) -> <span style="color:#79c0ff">dict</span>[<span style="color:#79c0ff">str</span>, <span style="color:#79c0ff">str</span>]:
+    <span style="color:var(--accent2)">"""Echo the provided text back."""</span>
+    <span style="color:var(--accent3)">return</span> {<span style="color:var(--accent2)">"echo"</span>: text}
+
+<span style="color:var(--text-muted)"># Use with any LangChain BaseChatModel or custom ModelAdapter</span>
+agent = Agent(model=my_model, tools=[echo])
+state  = agent.run(<span style="color:var(--accent2)">"say hello"</span>)
+
+<span style="color:var(--text-muted)"># Streaming</span>
+<span style="color:var(--accent3)">for</span> event <span style="color:var(--accent3)">in</span> agent.stream(<span style="color:var(--accent2)">"say hello"</span>):
+    print(event.type, event)
+
+<span style="color:var(--text-muted)"># Async</span>
+state = <span style="color:var(--accent3)">await</span> agent.arun(<span style="color:var(--accent2)">"say hello"</span>)
+</code></pre>
+
+<div class="highlight-box">
+  <strong>Install:</strong> <code>uv pip install -e .</code> from the repository root.
+  Dependencies: <code>langchain-core &ge;0.3.0</code> and <code>langgraph &ge;0.2.0</code>.
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="project-structure">Project Structure</h2>
+
+<div class="card">
+<div class="file-tree">
+<span class="dir">src/agent_kit/</span><br>
+&nbsp;&nbsp;<span class="file">__init__.py</span> <span class="comment">&larr; public API exports (35 symbols)</span><br>
+&nbsp;&nbsp;<span class="file">agent.py</span> <span class="comment">&larr; Agent orchestrator class</span><br>
+&nbsp;&nbsp;<span class="file">config.py</span> <span class="comment">&larr; configuration dataclasses &amp; type aliases</span><br>
+&nbsp;&nbsp;<span class="file">errors.py</span> <span class="comment">&larr; exception hierarchy</span><br>
+&nbsp;&nbsp;<span class="file">events.py</span> <span class="comment">&larr; stream event types</span><br>
+&nbsp;&nbsp;<span class="file">invocation.py</span> <span class="comment">&larr; request normalization &amp; state init</span><br>
+&nbsp;&nbsp;<span class="file">middleware.py</span> <span class="comment">&larr; middleware primitives &amp; built-ins</span><br>
+&nbsp;&nbsp;<span class="file">model_adapter.py</span> <span class="comment">&larr; ModelAdapter protocol &amp; LangChain bridge</span><br>
+&nbsp;&nbsp;<span class="file">nested.py</span> <span class="comment">&larr; nested agent composition</span><br>
+&nbsp;&nbsp;<span class="file">state.py</span> <span class="comment">&larr; AgentState TypedDict + reducers</span><br>
+&nbsp;&nbsp;<span class="dir">graph/</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">base.py</span> <span class="comment">&larr; CompiledGraph &amp; GraphBuilder protocols</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">nodes.py</span> <span class="comment">&larr; reasoning_step &amp; action_step</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">react.py</span> <span class="comment">&larr; ReAct loop implementation</span><br>
+&nbsp;&nbsp;<span class="dir">tools/</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">base.py</span> <span class="comment">&larr; BaseTool ABC, validation, ArgumentSpec</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">decorator.py</span> <span class="comment">&larr; @tool decorator &amp; FunctionTool</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">executor.py</span> <span class="comment">&larr; ToolExecutor (seq &amp; parallel)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">model_binding.py</span> <span class="comment">&larr; LLM tool binding</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">registry.py</span> <span class="comment">&larr; ToolRegistry dict wrapper</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">schema.py</span> <span class="comment">&larr; JSON schema generation &amp; hashing</span><br>
+&nbsp;&nbsp;<span class="dir">utils/</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">async_utils.py</span> <span class="comment">&larr; sync/async compatibility</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">state_utils.py</span> <span class="comment">&larr; clone, delta, merge helpers</span><br>
+<span class="dir">tests/</span> <span class="comment">&larr; 16 test modules with pytest + pytest-asyncio</span><br>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="architecture">Architecture Diagram</h2>
+
+<div class="diagram">
+  <div style="margin-bottom: 16px;">
+    <div class="flow-box primary" style="font-size:16px; padding: 12px 28px;">Agent</div>
+  </div>
+  <div class="flow-arrow-down">&darr;</div>
+
+  <div class="flow-row">
+    <div class="flow-box muted">normalize_request()</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-box muted">build_initial_state()</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-box primary">_compiled_graph()</div>
+  </div>
+  <div class="flow-arrow-down">&darr;</div>
+
+  <div style="border: 1px dashed var(--border); border-radius: 12px; padding: 20px; display: inline-block;">
+    <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">ReAct Loop (up to max_steps)</div>
+    <div class="flow-row">
+      <div class="flow-box purple">Reasoning Step</div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-box muted" style="font-style:italic;">tool_calls?</div>
+    </div>
+    <div class="flow-arrow-down">&darr; yes</div>
+    <div class="flow-row">
+      <div class="flow-box success">Action Step</div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-box muted">ToolExecutor</div>
+    </div>
+    <div class="flow-arrow-down">&darr;</div>
+    <div class="flow-row">
+      <div class="flow-box warn">Validation Check</div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-box muted" style="font-style:italic;">loop &uarr;</div>
+    </div>
+  </div>
+
+  <div class="flow-arrow-down">&darr; no tool_calls / max_steps / budget exhausted</div>
+  <div class="flow-box success" style="font-size: 15px; padding: 10px 24px;">AgentState (with termination reason)</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="agent">Agent</h2>
+<p><span class="tag tag-blue">src/agent_kit/agent.py</span></p>
+<p>
+  The <code>Agent</code> class is the primary entry point. It orchestrates model resolution, graph compilation,
+  and exposes all invocation APIs. It accepts either a LangChain <code>BaseChatModel</code> or a custom
+  <code>ModelAdapter</code>.
+</p>
+
+<h3>Constructor</h3>
+<pre><code>Agent(
+    *,
+    model: BaseChatModel | ModelAdapter,  <span style="color:var(--text-muted)"># LLM or custom adapter</span>
+    tools: list[BaseTool] | None = None,  <span style="color:var(--text-muted)"># initial tools</span>
+    graph_builder: GraphBuilder | None,   <span style="color:var(--text-muted)"># default: ReActGraphBuilder</span>
+    config: AgentConfig | None = None,    <span style="color:var(--text-muted)"># agent-level settings</span>
+)</code></pre>
+
+<h3>Invocation APIs</h3>
+<table>
+  <thead><tr><th>Method</th><th>Returns</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>run(user_message)</code></td><td><code>AgentState</code></td><td>Sync convenience wrapper. Guards against event loop.</td></tr>
+    <tr><td><code>arun(user_message)</code></td><td><code>AgentState</code></td><td>Async convenience wrapper.</td></tr>
+    <tr><td><code>invoke(request)</code></td><td><code>AgentState</code></td><td>Full sync invocation. Accepts <code>str</code> or <code>InvocationRequest</code>.</td></tr>
+    <tr><td><code>ainvoke(request)</code></td><td><code>AgentState</code></td><td>Full async invocation.</td></tr>
+    <tr><td><code>stream(request)</code></td><td><code>Iterator[StreamEvent]</code></td><td>Sync generator yielding events.</td></tr>
+    <tr><td><code>astream(request)</code></td><td><code>AsyncIterator[StreamEvent]</code></td><td>Async generator yielding events.</td></tr>
+    <tr><td><code>as_tool()</code></td><td><code>BaseTool</code></td><td>Wraps this agent as a <code>NestedAgentTool</code>.</td></tr>
+  </tbody>
+</table>
+
+<h3>Tool Management</h3>
+<pre><code>agent.add_tool(my_tool)        <span style="color:var(--text-muted)"># marks graph dirty</span>
+agent.remove_tool("my_tool")   <span style="color:var(--text-muted)"># marks graph dirty</span>
+agent.set_tools([t1, t2])      <span style="color:var(--text-muted)"># replaces all, marks dirty</span></code></pre>
+
+<h3>Lazy Compilation &amp; Dirty Tracking</h3>
+<div class="highlight-box">
+  The agent uses a <code>threading.RLock</code> to guard compilation. When tools, hooks, or middleware are modified,
+  the graph is marked <strong>dirty</strong>. On next invocation, the graph is recompiled. A SHA-256 <strong>schema signature</strong>
+  tracks whether the tool set changed, enabling efficient model re-binding only when necessary.
+</div>
+
+<details>
+  <summary>How <code>_compiled_graph()</code> works internally</summary>
+  <div class="detail-content">
+    <ol>
+      <li>Acquire <code>_compile_lock</code> (reentrant lock for thread safety).</li>
+      <li>If <code>_compiled is None</code> or <code>_dirty is True</code>, resolve the model adapter.</li>
+      <li>For <code>BaseChatModel</code> with <code>mode="auto"</code>: generate tool schemas, call <code>bind_model_tools()</code>, compute schema signature.</li>
+      <li>Call <code>graph_builder.build(model_adapter, tools, config, hooks, middlewares)</code>.</li>
+      <li>Cache the compiled graph, clear dirty flag.</li>
+    </ol>
+  </div>
+</details>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="config">Configuration</h2>
+<p><span class="tag tag-blue">src/agent_kit/config.py</span></p>
+
+<h3>AgentConfig</h3>
+<p>Top-level configuration for the <code>Agent</code>.</p>
+<table>
+  <thead><tr><th>Field</th><th>Type</th><th>Default</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td><code>default_metadata</code></td><td><code>dict</code></td><td><code>{}</code></td><td>Merged into every invocation's metadata.</td></tr>
+    <tr><td><code>graph_config</code></td><td><code>GraphBuildConfig</code></td><td>see below</td><td>Controls the execution graph.</td></tr>
+    <tr><td><code>model_tool_binding_mode</code></td><td><code>ToolBindingMode</code></td><td><code>"auto"</code></td><td><code>"auto"</code> | <code>"manual"</code> | <code>"off"</code></td></tr>
+    <tr><td><code>tool_schema_sync_policy</code></td><td><code>ToolSchemaSyncPolicy</code></td><td><code>"strict"</code></td><td><code>"strict"</code> | <code>"warn"</code> | <code>"ignore"</code></td></tr>
+    <tr><td><code>before_tool_hooks</code></td><td><code>list[BeforeToolHook]</code></td><td><code>[]</code></td><td>Hooks run before each tool.</td></tr>
+    <tr><td><code>after_tool_hooks</code></td><td><code>list[AfterToolHook]</code></td><td><code>[]</code></td><td>Hooks run after each tool.</td></tr>
+    <tr><td><code>middlewares</code></td><td><code>list[Middleware]</code></td><td><code>[]</code></td><td>Middleware stack wrapping execution.</td></tr>
+  </tbody>
+</table>
+
+<h3>GraphBuildConfig</h3>
+<table>
+  <thead><tr><th>Field</th><th>Type</th><th>Default</th></tr></thead>
+  <tbody>
+    <tr><td><code>max_steps</code></td><td><code>int</code></td><td><code>25</code></td></tr>
+    <tr><td><code>default_execution_mode</code></td><td><code>ExecutionMode</code></td><td><code>"sequential"</code></td></tr>
+    <tr><td><code>max_parallel_workers</code></td><td><code>int</code></td><td><code>4</code></td></tr>
+    <tr><td><code>default_validation_repair_turns</code></td><td><code>int</code></td><td><code>1</code></td></tr>
+    <tr><td><code>checkpointer</code></td><td><code>Any | None</code></td><td><code>None</code></td></tr>
+    <tr><td><code>model_config_overrides</code></td><td><code>dict</code></td><td><code>{}</code></td></tr>
+  </tbody>
+</table>
+
+<h3>InvocationConfig</h3>
+<p>Per-call configuration that overrides graph defaults.</p>
+<table>
+  <thead><tr><th>Field</th><th>Default</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><code>execution_mode</code></td><td><code>None</code></td><td>Falls back to graph default.</td></tr>
+    <tr><td><code>max_steps</code></td><td><code>None</code></td><td>Falls back to graph default.</td></tr>
+    <tr><td><code>include_state_snapshots</code></td><td><code>False</code></td><td>Attach full state to <code>StateUpdateEvent</code>.</td></tr>
+    <tr><td><code>emit_llm_tokens</code></td><td><code>True</code></td><td>Emit <code>LLMTokenEvent</code> during streaming.</td></tr>
+    <tr><td><code>validation_repair_turns</code></td><td><code>None</code></td><td>Override repair budget per call.</td></tr>
+    <tr><td><code>thread_id</code></td><td><code>None</code></td><td>For checkpointing / conversation threads.</td></tr>
+    <tr><td><code>tags</code></td><td><code>[]</code></td><td>Tracing and filtering tags.</td></tr>
+    <tr><td><code>configurable</code></td><td><code>{}</code></td><td>Passed to the LLM.</td></tr>
+  </tbody>
+</table>
+
+<h3>Data Types</h3>
+
+<details>
+  <summary><code>ToolResult</code> &mdash; normalized tool execution outcome</summary>
+  <div class="detail-content">
+<pre><code>@dataclass(slots=True)
+class ToolResult:
+    tool_name: str
+    call_id: str
+    status: Literal["success", "failed", "skipped"]
+    data: Any = None
+    error: ToolError | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+    started_at: float | None = None
+    ended_at: float | None = None
+    duration_ms: float | None = None</code></pre>
+  </div>
+</details>
+
+<details>
+  <summary><code>ToolError</code> &mdash; structured error descriptor</summary>
+  <div class="detail-content">
+<pre><code>@dataclass(slots=True)
+class ToolError:
+    code: str           <span style="color:var(--text-muted)"># "tool_not_found", "validation_error", etc.</span>
+    message: str
+    retriable: bool = False
+    details: dict[str, Any] = field(default_factory=dict)</code></pre>
+  </div>
+</details>
+
+<details>
+  <summary><code>ToolDecision</code> &mdash; pre-execution gate</summary>
+  <div class="detail-content">
+<pre><code>@dataclass(slots=True)
+class ToolDecision:
+    action: Literal["continue", "skip"] = "continue"
+    reason: str | None = None
+    result_override: ToolResult | None = None</code></pre>
+    <p>Returned by <code>pre_execute()</code>. If <code>action="skip"</code>, the tool is not invoked and the optional override is returned instead.</p>
+  </div>
+</details>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="state">State Management</h2>
+<p><span class="tag tag-blue">src/agent_kit/state.py</span> <span class="tag tag-green">src/agent_kit/utils/state_utils.py</span></p>
+
+<h3>AgentState</h3>
+<pre><code><span style="color:var(--accent3)">class</span> <span style="color:var(--accent6)">AgentState</span>(TypedDict, total=False):
+    messages:      Annotated[list[BaseMessage], append_messages]
+    tool_outputs:  Annotated[list[ToolResult],  append_tool_outputs]
+    metadata:      Annotated[dict[str, Any],    merge_dict]
+    routing_hints: Annotated[dict[str, Any],    merge_dict]
+    termination:   Annotated[dict[str, Any],    merge_dict]</code></pre>
+
+<div class="highlight-box">
+  Each field has a <strong>reducer</strong> function via <code>Annotated</code>:
+  <ul>
+    <li><code>append_messages</code> / <code>append_tool_outputs</code> &mdash; concatenate lists</li>
+    <li><code>merge_dict</code> &mdash; shallow-merge dictionaries</li>
+  </ul>
+  This is a LangGraph convention that enables safe state updates in the graph execution loop.
+</div>
+
+<h3>State Utilities</h3>
+<table>
+  <thead><tr><th>Function</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td><code>clone_state(state)</code></td><td>Deep copy via <code>copy.deepcopy</code>.</td></tr>
+    <tr><td><code>state_delta(before, after)</code></td><td>Compute changed fields only. Lists &rarr; new items only.</td></tr>
+    <tr><td><code>apply_delta(state, delta)</code></td><td>Apply a delta to a state (extend lists, update dicts).</td></tr>
+    <tr><td><code>merge_parallel_state_deltas(base, deltas)</code></td><td>Clone base, sequentially apply all deltas.</td></tr>
+    <tr><td><code>merge_metadata(base, update)</code></td><td>Shallow dict merge.</td></tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="invocation">Invocation Pipeline</h2>
+<p><span class="tag tag-blue">src/agent_kit/invocation.py</span></p>
+
+<div class="diagram">
+  <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px;">Request &rarr; State Pipeline</div>
+  <div class="flow-row">
+    <div class="flow-box muted">str | InvocationRequest</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-box primary">normalize_request()</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-box success">build_messages()</div>
+  </div>
+  <div class="flow-arrow-down">&darr;</div>
+  <div class="flow-row">
+    <div class="flow-box purple">build_initial_state()</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-box success">AgentState</div>
+  </div>
+</div>
+
+<h3>Key Functions</h3>
+<ul>
+  <li><strong><code>normalize_request()</code></strong> &mdash; Converts a plain string to <code>InvocationRequest</code>, deep-copies existing requests, merges metadata/config overrides, and validates that at least <code>input_text</code> or <code>messages</code> is present.</li>
+  <li><strong><code>build_messages()</code></strong> &mdash; Extracts <code>BaseMessage</code> objects from the request, appends a <code>HumanMessage</code> for <code>input_text</code>, and inserts or replaces the <code>SystemMessage</code>.</li>
+  <li><strong><code>build_initial_state()</code></strong> &mdash; Creates the initial <code>AgentState</code>, merges default metadata, and applies any <code>state_patch</code> overrides for direct state manipulation.</li>
+</ul>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="tools-overview">Tool System Overview</h2>
+
+<div class="diagram">
+  <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px;">Tool Architecture</div>
+  <div class="flow-row">
+    <div class="flow-box purple">@tool decorator</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-box primary">FunctionTool</div>
+  </div>
+  <div style="margin: 6px 0; color: var(--text-muted); font-size: 13px;">or subclass directly:</div>
+  <div class="flow-row">
+    <div class="flow-box primary">BaseTool (ABC)</div>
+  </div>
+  <div class="flow-arrow-down">&darr; registered in</div>
+  <div class="flow-row">
+    <div class="flow-box success">ToolRegistry</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-box success">ToolExecutor</div>
+  </div>
+  <div class="flow-arrow-down">&darr; schemas generated by</div>
+  <div class="flow-row">
+    <div class="flow-box muted">schema.py</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-box muted">model_binding.py</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-box purple">LLM (bind_tools)</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="base-tool">BaseTool</h2>
+<p><span class="tag tag-blue">src/agent_kit/tools/base.py</span></p>
+
+<pre><code><span style="color:var(--accent3)">class</span> <span style="color:var(--accent6)">BaseTool</span>(ABC):
+    <span style="color:var(--accent3)">def</span> <span style="color:var(--accent6)">__init__</span>(self, *, name, description, arg_specs, allow_extra_args): ...
+
+    <span style="color:var(--text-muted)"># Lifecycle hooks (all overridable)</span>
+    <span style="color:var(--accent3)">def</span> <span style="color:var(--accent6)">pre_execute</span>(self, state) -> ToolDecision       <span style="color:var(--text-muted)"># gate check</span>
+    <span style="color:var(--accent3)">def</span> <span style="color:var(--accent6)">execute</span>(self, state, **kwargs) -> Any           <span style="color:var(--text-muted)"># ABSTRACT &mdash; your logic</span>
+    <span style="color:var(--accent3)">def</span> <span style="color:var(--accent6)">post_execute</span>(self, state, result) -> (state, result)  <span style="color:var(--text-muted)"># transform result</span>
+
+    <span style="color:var(--text-muted)"># Async counterparts (default to calling sync)</span>
+    <span style="color:var(--accent3)">async def</span> <span style="color:var(--accent6)">apre_execute</span>(self, state) -> ToolDecision
+    <span style="color:var(--accent3)">async def</span> <span style="color:var(--accent6)">aexecute</span>(self, state, **kwargs) -> Any
+    <span style="color:var(--accent3)">async def</span> <span style="color:var(--accent6)">apost_execute</span>(self, state, result) -> (state, result)
+
+    <span style="color:var(--text-muted)"># Result normalization</span>
+    <span style="color:var(--accent3)">def</span> <span style="color:var(--accent6)">normalize_success</span>(self, call_id, output, started, ended) -> ToolResult
+    <span style="color:var(--accent3)">def</span> <span style="color:var(--accent6)">normalize_failure</span>(self, call_id, error, started, ...) -> ToolResult</code></pre>
+
+<h3>Argument Validation</h3>
+<p>The <code>validate_args()</code> function checks tool arguments before execution:</p>
+<table>
+  <thead><tr><th>Check</th><th>Error Kind</th><th>Details</th></tr></thead>
+  <tbody>
+    <tr><td>Unexpected arguments</td><td><code>unexpected_args</code></td><td><code>{"unexpected": [...]}</code></td></tr>
+    <tr><td>Missing required arguments</td><td><code>missing_args</code></td><td><code>{"missing": [...]}</code></td></tr>
+    <tr><td>Wrong type for argument</td><td><code>invalid_type</code></td><td><code>{"arg_name", "expected", "actual_type"}</code></td></tr>
+  </tbody>
+</table>
+
+<div class="highlight-box">
+  <code>ArgumentSpec</code> is automatically inferred from the tool's <code>execute()</code> method signature via <code>inspect.signature()</code>
+  and <code>get_type_hints()</code>. The <code>self</code> and <code>state</code> parameters are excluded. If the function accepts
+  <code>**kwargs</code>, <code>allow_extra_args</code> is set to <code>True</code>.
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="decorator">@tool Decorator</h2>
+<p><span class="tag tag-blue">src/agent_kit/tools/decorator.py</span></p>
+
+<p>The <code>@tool</code> decorator converts a plain function into a <code>FunctionTool</code> (a <code>BaseTool</code> subclass).</p>
+
+<pre><code><span style="color:var(--text-muted)"># Basic usage &mdash; name/description inferred from function</span>
+<span style="color:var(--accent)">@tool</span>
+<span style="color:var(--accent3)">def</span> <span style="color:var(--accent6)">search</span>(state: AgentState, query: <span style="color:#79c0ff">str</span>) -> <span style="color:#79c0ff">dict</span>:
+    <span style="color:var(--accent2)">"""Search the knowledge base."""</span>
+    <span style="color:var(--accent3)">return</span> {<span style="color:var(--accent2)">"results"</span>: [...]}
+
+<span style="color:var(--text-muted)"># Full options</span>
+<span style="color:var(--accent)">@tool</span>(
+    name=<span style="color:var(--accent2)">"web_search"</span>,
+    description=<span style="color:var(--accent2)">"Searches the web"</span>,
+    pre_execute=my_gate_fn,       <span style="color:var(--text-muted)"># (state) -> ToolDecision</span>
+    post_execute=my_transform_fn, <span style="color:var(--text-muted)"># (state, result) -> (state, result)</span>
+)
+<span style="color:var(--accent3)">def</span> <span style="color:var(--accent6)">web_search</span>(state, query: <span style="color:#79c0ff">str</span>, max_results: <span style="color:#79c0ff">int</span> = 5) -> <span style="color:#79c0ff">dict</span>:
+    ...</code></pre>
+
+<p>Works with or without parentheses: <code>@tool</code> and <code>@tool(name="...")</code> are both valid.</p>
+
+<h3>FunctionTool Internals</h3>
+<ul>
+  <li>Name defaults to <code>func.__name__</code>.</li>
+  <li>Description defaults to <code>inspect.getdoc(func)</code> (the docstring).</li>
+  <li>Argument specs inferred from the function signature.</li>
+  <li><code>aexecute</code> checks if the function returns an awaitable and auto-awaits.</li>
+</ul>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="tool-executor">ToolExecutor</h2>
+<p><span class="tag tag-blue">src/agent_kit/tools/executor.py</span></p>
+
+<p>Manages the full lifecycle of tool invocation: hook execution, middleware wrapping, validation, execution, and result normalization.</p>
+
+<h3>Execution Modes</h3>
+<div class="card-grid">
+  <div class="card">
+    <h4><span class="tag tag-green">Sequential</span></h4>
+    <p>Tools run one at a time. Each tool's state changes are visible to the next. Default mode.</p>
+  </div>
+  <div class="card">
+    <h4><span class="tag tag-purple">Parallel</span></h4>
+    <p>Each tool receives a <strong>cloned snapshot</strong> of the base state. State <strong>deltas</strong> are computed and merged after all tools complete.</p>
+    <p>Sync: <code>ThreadPoolExecutor</code><br>Async: <code>asyncio.gather</code> + <code>Semaphore</code></p>
+  </div>
+</div>
+
+<h3>Tool Pipeline (per tool call)</h3>
+<div class="diagram">
+  <div class="flow-row">
+    <div class="flow-box muted">Before Hooks</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-box purple">pre_execute()</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-box warn">validate_args()</div>
+  </div>
+  <div class="flow-arrow-down">&darr;</div>
+  <div class="flow-row">
+    <div class="flow-box primary">execute() / aexecute()</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-box success">normalize_success()</div>
+  </div>
+  <div class="flow-arrow-down">&darr;</div>
+  <div class="flow-row">
+    <div class="flow-box purple">post_execute()</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-box muted">After Hooks</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-box success">ToolResult</div>
+  </div>
+  <div style="margin-top: 12px; font-size: 12px; color: var(--text-muted);">
+    The entire pipeline is wrapped by the middleware stack (applied in reverse order).
+  </div>
+</div>
+
+<h3>Error Handling at Each Stage</h3>
+<table>
+  <thead><tr><th>Stage</th><th>Error Code</th></tr></thead>
+  <tbody>
+    <tr><td>Tool not found</td><td><code>tool_not_found</code></td></tr>
+    <tr><td>Before hook exception</td><td><code>before_hook_error</code></td></tr>
+    <tr><td>pre_execute exception</td><td><code>pre_execute_error</code></td></tr>
+    <tr><td>Argument validation</td><td><code>validation_error</code></td></tr>
+    <tr><td>Tool execution failure</td><td><code>execution_error</code></td></tr>
+    <tr><td>After hook exception</td><td><code>after_hook_error</code></td></tr>
+    <tr><td>Middleware exception</td><td><code>middleware_error</code></td></tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="tool-schema">Schema Generation</h2>
+<p><span class="tag tag-blue">src/agent_kit/tools/schema.py</span></p>
+
+<p>Converts Python type annotations to <strong>OpenAI-compatible JSON schemas</strong> for LLM tool binding.</p>
+
+<h3>Supported Annotations</h3>
+<table>
+  <thead><tr><th>Python Type</th><th>JSON Schema</th></tr></thead>
+  <tbody>
+    <tr><td><code>str</code></td><td><code>{"type": "string"}</code></td></tr>
+    <tr><td><code>int</code></td><td><code>{"type": "integer"}</code></td></tr>
+    <tr><td><code>float</code></td><td><code>{"type": "number"}</code></td></tr>
+    <tr><td><code>bool</code></td><td><code>{"type": "boolean"}</code></td></tr>
+    <tr><td><code>None</code></td><td><code>{"type": "null"}</code></td></tr>
+    <tr><td><code>list[T]</code></td><td><code>{"type": "array", "items": ...}</code></td></tr>
+    <tr><td><code>set[T]</code></td><td><code>{"type": "array", "uniqueItems": true}</code></td></tr>
+    <tr><td><code>dict[str, T]</code></td><td><code>{"type": "object", "additionalProperties": ...}</code></td></tr>
+    <tr><td><code>T | U</code></td><td><code>{"anyOf": [...]}</code></td></tr>
+    <tr><td><code>Literal["a", "b"]</code></td><td><code>{"enum": [...], "type": ...}</code></td></tr>
+    <tr><td><code>Any</code> / untyped</td><td><code>{}</code> (permissive)</td></tr>
+  </tbody>
+</table>
+
+<h3>Schema Sync Policies</h3>
+<table>
+  <thead><tr><th>Policy</th><th>On Unsupported Type</th></tr></thead>
+  <tbody>
+    <tr><td><code>"strict"</code></td><td>Raises <code>ToolSchemaConversionError</code>.</td></tr>
+    <tr><td><code>"warn"</code></td><td>Logs a warning, returns <code>{}</code>.</td></tr>
+    <tr><td><code>"ignore"</code></td><td>Silently returns <code>{}</code>.</td></tr>
+  </tbody>
+</table>
+
+<h3>Signature Hashing</h3>
+<p><code>tool_schema_signature(schemas)</code> produces a SHA-256 hex digest of the serialized schemas. This is stored in <code>Agent._last_tool_schema_signature</code> to detect when tool schemas change, enabling re-binding only when necessary.</p>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="model-binding">Model Binding</h2>
+<p><span class="tag tag-blue">src/agent_kit/tools/model_binding.py</span></p>
+
+<p><code>bind_model_tools()</code> calls <code>model.bind_tools(schemas)</code> on a LangChain <code>BaseChatModel</code> to produce a model instance that knows about available tools. Raises <code>ModelToolBindingError</code> if the model does not support <code>bind_tools</code>.</p>
+
+<h3>Binding Modes</h3>
+<table>
+  <thead><tr><th>Mode</th><th>Behavior</th></tr></thead>
+  <tbody>
+    <tr><td><code>"auto"</code></td><td>Generate schemas, bind tools, track signature. Fail fast if unsupported.</td></tr>
+    <tr><td><code>"manual"</code></td><td>Skip binding. Assume model is pre-configured externally.</td></tr>
+    <tr><td><code>"off"</code></td><td>Disable binding entirely. No schema checks.</td></tr>
+  </tbody>
+</table>
+
+<div class="highlight-box">
+  Custom <code>ModelAdapter</code> implementations bypass auto-binding entirely &mdash; they are treated as already knowing about their tools.
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="react-graph">ReAct Graph</h2>
+<p><span class="tag tag-blue">src/agent_kit/graph/react.py</span></p>
+
+<p>The <strong>ReAct (Reason + Act)</strong> loop is the default execution strategy. It alternates between LLM reasoning and tool action steps.</p>
+
+<h3>Termination Reasons</h3>
+<table>
+  <thead><tr><th>Reason</th><th>When</th></tr></thead>
+  <tbody>
+    <tr><td><code>"completed"</code></td><td>LLM returns no tool calls (natural completion).</td></tr>
+    <tr><td><code>"max_steps_reached"</code></td><td>Loop hits the <code>max_steps</code> limit.</td></tr>
+    <tr><td><code>"validation_repair_exhausted"</code></td><td>Consecutive validation failures exceed the repair budget.</td></tr>
+    <tr><td><code>"error"</code></td><td>Unhandled exception during streaming.</td></tr>
+  </tbody>
+</table>
+
+<h3>Validation Repair Budget</h3>
+<div class="highlight-box">
+  <p>When a tool call fails validation, the error is sent back to the LLM as a <code>ToolMessage</code>. The LLM can then
+    retry with corrected arguments. A <strong>consecutive failure counter</strong> tracks this:</p>
+  <ul>
+    <li>Counter increments on each <code>validation_error</code> result.</li>
+    <li>Counter resets to 0 on any successful tool execution.</li>
+    <li>If counter exceeds the budget (default: 1), the loop terminates.</li>
+  </ul>
+  <p>This prevents infinite loops from a model that repeatedly sends malformed tool calls.</p>
+</div>
+
+<h3>ReActGraphBuilder</h3>
+<pre><code><span style="color:var(--accent3)">class</span> <span style="color:var(--accent6)">ReActGraphBuilder</span>(GraphBuilder):
+    <span style="color:var(--accent3)">def</span> <span style="color:var(--accent6)">build</span>(self, model, tools, config, *,
+          before_hooks, after_hooks, middlewares) -> CompiledGraph:
+        registry = ToolRegistry(tools)
+        executor = ToolExecutor(registry, before_hooks=..., after_hooks=..., middlewares=...)
+        <span style="color:var(--accent3)">return</span> ReActCompiledGraph(model=model, executor=executor, config=config)</code></pre>
+
+<p>You can replace the default graph builder with any object implementing the <code>GraphBuilder</code> protocol to create custom execution strategies (e.g., tree search, chain-of-thought, or multi-agent orchestration).</p>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="graph-nodes">Graph Nodes</h2>
+<p><span class="tag tag-blue">src/agent_kit/graph/nodes.py</span></p>
+
+<h3>Reasoning Step</h3>
+<pre><code><span style="color:var(--accent3)">def</span> <span style="color:var(--accent6)">reasoning_step</span>(state, model, config, *, event_sink) -> (AgentState, list[ToolCall]):
+    response = model.complete(state["messages"], config)
+    state["messages"].append(response.message)
+    <span style="color:var(--text-muted)"># Emits: LLMTokenEvent, StateUpdateEvent</span>
+    <span style="color:var(--accent3)">return</span> state, response.tool_calls</code></pre>
+
+<h3>Action Step</h3>
+<pre><code><span style="color:var(--accent3)">def</span> <span style="color:var(--accent6)">action_step</span>(state, tool_calls, executor, config, *, event_sink) -> (AgentState, list[ToolResult]):
+    state, results = executor.execute_calls(state, tool_calls, config)
+    <span style="color:var(--text-muted)"># Converts each ToolResult &rarr; ToolMessage and appends to state["messages"]</span>
+    <span style="color:var(--text-muted)"># Also appends to state["tool_outputs"]</span>
+    <span style="color:var(--text-muted)"># Emits: StateUpdateEvent</span>
+    <span style="color:var(--accent3)">return</span> state, results</code></pre>
+
+<p>Both nodes also have async variants: <code>areasoning_step</code> and <code>aaction_step</code>.</p>
+
+<div class="highlight-box">
+  Tool results are serialized to JSON via <code>_serialize_tool_result()</code> and wrapped in LangChain's
+  <code>ToolMessage</code> format. This allows the LLM to read the results and decide what to do next.
+  Non-JSON-serializable <code>data</code> is converted to a string fallback.
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="events">Streaming Events</h2>
+<p><span class="tag tag-blue">src/agent_kit/events.py</span></p>
+
+<table>
+  <thead><tr><th>Event Type</th><th>Fields</th><th>When Emitted</th></tr></thead>
+  <tbody>
+    <tr><td><code>RunStartEvent</code></td><td><code>run_id</code></td><td>Beginning of stream/astream.</td></tr>
+    <tr><td><code>LLMTokenEvent</code></td><td><code>run_id, token</code></td><td>Each token from the LLM (if <code>emit_llm_tokens=True</code>).</td></tr>
+    <tr><td><code>ToolStartEvent</code></td><td><code>run_id, tool_name, call_id, tool_args</code></td><td>Before each tool execution.</td></tr>
+    <tr><td><code>ToolEndEvent</code></td><td><code>run_id, result</code></td><td>After each tool execution.</td></tr>
+    <tr><td><code>StateUpdateEvent</code></td><td><code>run_id, delta, snapshot?</code></td><td>After reasoning and action steps.</td></tr>
+    <tr><td><code>RunEndEvent</code></td><td><code>run_id, termination</code></td><td>End of run (always emitted).</td></tr>
+    <tr><td><code>ErrorEvent</code></td><td><code>run_id, message</code></td><td>On unhandled exception during streaming.</td></tr>
+  </tbody>
+</table>
+
+<pre><code>StreamEvent = RunStartEvent | LLMTokenEvent | ToolStartEvent | ToolEndEvent
+            | StateUpdateEvent | RunEndEvent | ErrorEvent</code></pre>
+
+<div class="highlight-box">
+  The <code>run_id</code> (UUID hex) is injected by the stream/astream methods after events are emitted
+  by the nodes. If <code>include_state_snapshots=True</code>, <code>StateUpdateEvent.snapshot</code> contains the full cloned state.
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="model-adapter">Model Adapter</h2>
+<p><span class="tag tag-blue">src/agent_kit/model_adapter.py</span></p>
+
+<h3>ModelAdapter Protocol</h3>
+<pre><code><span style="color:var(--accent3)">class</span> <span style="color:var(--accent6)">ModelAdapter</span>(Protocol):
+    <span style="color:var(--accent3)">def</span> <span style="color:var(--accent6)">complete</span>(self, messages: list[BaseMessage], config: InvocationConfig) -> ModelResponse: ...
+    <span style="color:var(--accent3)">async def</span> <span style="color:var(--accent6)">acomplete</span>(self, messages: list[BaseMessage], config: InvocationConfig) -> ModelResponse: ...</code></pre>
+
+<h3>ModelResponse</h3>
+<pre><code>@dataclass(slots=True)
+<span style="color:var(--accent3)">class</span> <span style="color:var(--accent6)">ModelResponse</span>:
+    message: AIMessage
+    tool_calls: list[ToolCall] = []
+    tokens: list[str] = []</code></pre>
+
+<h3>LangChainModelAdapter</h3>
+<p>Wraps any LangChain-compatible model (anything with <code>invoke</code>/<code>ainvoke</code>) into the <code>ModelAdapter</code> protocol:</p>
+<ul>
+  <li>Converts <code>InvocationConfig</code> to <code>RunnableConfig</code> (thread_id, tags, configurable).</li>
+  <li>Normalizes non-<code>AIMessage</code> responses to <code>AIMessage</code>.</li>
+  <li>Extracts tool calls from <code>message.tool_calls</code> or <code>additional_kwargs["tool_calls"]</code>.</li>
+  <li>Parses JSON string args, generates UUIDs for missing call IDs.</li>
+</ul>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="middleware">Middleware</h2>
+<p><span class="tag tag-blue">src/agent_kit/middleware.py</span></p>
+
+<h3>Core Types</h3>
+<pre><code><span style="color:var(--accent3)">class</span> <span style="color:var(--accent6)">ToolInvocationContext</span>:
+    state: AgentState
+    tool_name: str
+    call_id: str
+    tool_args: dict[str, Any]
+    metadata: dict[str, Any]
+
+<span style="color:var(--accent3)">class</span> <span style="color:var(--accent6)">ToolExecutionOutcome</span>:
+    state: AgentState
+    result: ToolResult
+
+NextCallable = (ToolInvocationContext) -> ToolExecutionOutcome
+Middleware    = (ToolInvocationContext, NextCallable) -> ToolExecutionOutcome</code></pre>
+
+<h3>How Middleware Chains Work</h3>
+<div class="diagram">
+  <div class="flow-row">
+    <div class="flow-box primary">MW 1</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-box primary">MW 2</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-box primary">MW N</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-box success">Terminal (tool pipeline)</div>
+  </div>
+  <div style="margin-top: 8px; font-size: 12px; color: var(--text-muted);">
+    Middlewares wrap in reverse order. Each calls <code>next(context)</code> to proceed.
+  </div>
+</div>
+
+<h3>Built-in Middleware</h3>
+
+<div class="card-grid">
+  <div class="card">
+    <h4><code>logging_middleware(logger?)</code></h4>
+    <span class="tag tag-green">Sync</span>
+    <p>Logs <code>tool_start</code> and <code>tool_end</code> with status to the provided logger (default: <code>agent_kit</code>).</p>
+  </div>
+  <div class="card">
+    <h4><code>RetryMiddleware(max_retries=1)</code></h4>
+    <span class="tag tag-purple">Async</span>
+    <p>Retries failed tool calls if <code>error.retriable=True</code>. Bounded by <code>max_retries</code>.</p>
+  </div>
+  <div class="card">
+    <h4><code>TimeoutMiddleware(timeout_seconds)</code></h4>
+    <span class="tag tag-purple">Async</span>
+    <p>Wraps execution with <code>asyncio.wait_for</code>. On timeout, returns a failed result with <code>code="timeout"</code> (retriable).</p>
+  </div>
+  <div class="card">
+    <h4><code>MetricsMiddleware(key_prefix="metrics")</code></h4>
+    <span class="tag tag-green">Sync</span>
+    <p>Tracks <code>count</code> and <code>last_duration_ms</code> per tool in <code>state["metadata"][prefix][tool_name]</code>.</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="nested">Nested Agents</h2>
+<p><span class="tag tag-blue">src/agent_kit/nested.py</span></p>
+
+<p>Any <code>Agent</code> can be wrapped as a tool for another agent, enabling hierarchical delegation.</p>
+
+<pre><code><span style="color:var(--accent3)">from</span> agent_kit <span style="color:var(--accent3)">import</span> Agent, agent_as_tool, NestedAgentPolicy
+
+child_agent  = Agent(model=model, tools=[...])
+parent_agent = Agent(
+    model=model,
+    tools=[
+        agent_as_tool(
+            child_agent,
+            name=<span style="color:var(--accent2)">"researcher"</span>,
+            description=<span style="color:var(--accent2)">"Delegate research tasks"</span>,
+            policy=NestedAgentPolicy(state_bridge=<span style="color:var(--accent2)">"copy_merge"</span>, max_depth=3),
+        )
+    ],
+)
+<span style="color:var(--text-muted)"># Or use the convenience method:</span>
+parent_agent = Agent(model=model, tools=[child_agent.as_tool(name=<span style="color:var(--accent2)">"researcher"</span>)])</code></pre>
+
+<h3>NestedAgentPolicy</h3>
+<table>
+  <thead><tr><th>Field</th><th>Options</th><th>Default</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>state_bridge</code></td>
+      <td><code>"copy_merge"</code> | <code>"shared"</code> | <code>"isolated"</code></td>
+      <td><code>"copy_merge"</code></td>
+    </tr>
+    <tr>
+      <td><code>message_merge</code></td>
+      <td><code>"final_with_transcript"</code> | <code>"inline_all"</code> | <code>"none"</code></td>
+      <td><code>"final_with_transcript"</code></td>
+    </tr>
+    <tr>
+      <td><code>failure_mode</code></td>
+      <td><code>"continue"</code> | <code>"abort"</code></td>
+      <td><code>"continue"</code></td>
+    </tr>
+    <tr>
+      <td><code>max_depth</code></td>
+      <td>Any positive int</td>
+      <td><code>3</code></td>
+    </tr>
+    <tr>
+      <td><code>map_input</code></td>
+      <td>Custom <code>(state, kwargs) -&gt; InvocationRequest</code></td>
+      <td><code>None</code></td>
+    </tr>
+    <tr>
+      <td><code>merge_output</code></td>
+      <td>Custom <code>(parent_state, child_state) -&gt; AgentState</code></td>
+      <td><code>None</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>State Bridge Modes</h3>
+<div class="card-grid">
+  <div class="card">
+    <h4><code>"copy_merge"</code> <span class="tag tag-green">Default</span></h4>
+    <p>Child receives a copy of parent state. After execution, child metadata is merged back into parent (excluding <code>_agent_depth</code>).</p>
+  </div>
+  <div class="card">
+    <h4><code>"shared"</code></h4>
+    <p>Like <code>copy_merge</code> but also appends new messages and tool_outputs from the child to the parent (append-only, tracking list lengths).</p>
+  </div>
+  <div class="card">
+    <h4><code>"isolated"</code></h4>
+    <p>Child runs independently. Parent state is returned unchanged. Only <code>input</code>/<code>message</code> kwargs are passed to the child.</p>
+  </div>
+</div>
+
+<h3>Depth Tracking</h3>
+<div class="warning-box">
+  Nesting depth is tracked in <code>metadata["_agent_depth"]</code>. Each nested call increments it.
+  If <code>parent_depth &ge; max_depth</code>, a <code>RuntimeError</code> is raised, preventing infinite recursion.
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="hooks">Hooks</h2>
+
+<h3>BeforeToolHook</h3>
+<pre><code>BeforeToolHook = Callable[
+    [AgentState, str, dict[str, Any]],  <span style="color:var(--text-muted)"># state, tool_name, tool_args</span>
+    AgentState | Awaitable[AgentState]
+]</code></pre>
+<p>Runs before each tool invocation. Can modify the state. If it raises, execution produces a <code>before_hook_error</code> result.</p>
+
+<h3>AfterToolHook</h3>
+<pre><code>AfterToolHook = Callable[
+    [AgentState, str, ToolResult],  <span style="color:var(--text-muted)"># state, tool_name, result</span>
+    tuple[AgentState, ToolResult] | Awaitable[...]
+]</code></pre>
+<p>Runs after each tool invocation. Can modify both state and result. Applied in order; an exception produces an <code>after_hook_error</code> and breaks the chain.</p>
+
+<pre><code><span style="color:var(--text-muted)"># Register hooks on the agent</span>
+agent.add_before_tool_hook(my_before_hook)
+agent.add_after_tool_hook(my_after_hook)
+
+<span style="color:var(--text-muted)"># Or via config</span>
+config = AgentConfig(
+    before_tool_hooks=[my_before_hook],
+    after_tool_hooks=[my_after_hook],
+)</code></pre>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="errors">Errors</h2>
+<p><span class="tag tag-blue">src/agent_kit/errors.py</span></p>
+
+<div class="card" style="font-family: 'SF Mono', monospace; font-size: 13px; line-height: 2;">
+<span style="color: var(--accent4);">Exception</span><br>
+&nbsp;&nbsp;&boxur; <span style="color: var(--accent);">AgentKitError</span> <span style="color:var(--text-muted)">&mdash; base for all agent_kit exceptions</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&boxur; <span style="color: var(--accent6);">GraphBuildError</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&boxur; <span style="color: var(--accent3);">ModelToolBindingError</span> <span style="color:var(--text-muted)">&mdash; bind_tools not supported</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&boxur; <span style="color: var(--accent3);">ToolSchemaConversionError</span> <span style="color:var(--text-muted)">&mdash; strict schema policy violation</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&boxur; <span style="color: var(--accent6);">InvocationValidationError</span> <span style="color:var(--text-muted)">&mdash; invalid request (no text/messages)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&boxur; <span style="color: var(--accent6);">SyncInAsyncContextError</span> <span style="color:var(--text-muted)">&mdash; run/stream in event loop</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&boxur; <span style="color: var(--accent6);">ToolValidationError</span> <span style="color:var(--text-muted)">&mdash; arg validation failure (has .details dict)</span>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="utilities">Utilities</h2>
+
+<h3>Async Utilities</h3>
+<p><span class="tag tag-blue">src/agent_kit/utils/async_utils.py</span></p>
+<table>
+  <thead><tr><th>Function</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td><code>is_awaitable(value)</code></td><td>Check via <code>inspect.isawaitable</code>.</td></tr>
+    <tr><td><code>run_coroutine_sync(coro)</code></td><td>Run async in sync context. Spawns thread if already in event loop.</td></tr>
+    <tr><td><code>maybe_await(value)</code></td><td>Await if awaitable, else return. (Async)</td></tr>
+    <tr><td><code>maybe_await_sync(value)</code></td><td>Sync variant of <code>maybe_await</code>.</td></tr>
+  </tbody>
+</table>
+
+<div class="highlight-box">
+  <code>maybe_await</code> / <code>maybe_await_sync</code> are the glue that allows hooks and middleware to be written
+  as either sync or async functions interchangeably. The executor automatically adapts.
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="design-decisions">Design Decisions</h2>
+
+<div class="card">
+  <h4>1. Protocol-Based Extensibility</h4>
+  <p><code>ModelAdapter</code>, <code>GraphBuilder</code>, and <code>CompiledGraph</code> are Python <code>Protocol</code> classes &mdash; structural
+    subtyping (duck typing with type checking). This means you never need to inherit from them; any
+    object matching the signature works. This maximizes composability and avoids deep inheritance trees.</p>
+</div>
+
+<div class="card">
+  <h4>2. Stateful Tools Over Stateless Functions</h4>
+  <p>Unlike many agent frameworks that pass only arguments to tools, Agent Kit passes the full <code>AgentState</code>.
+    This enables tools to inspect conversation history, read metadata from previous tools, and even modify
+    routing hints for the next step. The tradeoff is slightly more complex tool signatures, but it unlocks
+    powerful multi-tool coordination patterns.</p>
+</div>
+
+<div class="card">
+  <h4>3. Delta-Based Parallel State Merging</h4>
+  <p>When tools run in parallel, each receives a <strong>clone</strong> of the base state. After execution,
+    only the <strong>delta</strong> (changed fields) is extracted. Deltas are then merged sequentially into
+    the base. This approach avoids conflicts and preserves append-only semantics for messages and tool_outputs.</p>
+</div>
+
+<div class="card">
+  <h4>4. Validation Repair as a First-Class Concern</h4>
+  <p>Rather than silently retrying or crashing on bad tool arguments, the framework sends the validation error
+    back to the LLM as a <code>ToolMessage</code>. The LLM can self-correct within a bounded budget. This is essential
+    for production reliability: it gives the model a chance to fix itself while preventing infinite error loops.</p>
+</div>
+
+<div class="card">
+  <h4>5. Middleware Stack Pattern (not Event Bus)</h4>
+  <p>The framework uses a <strong>chain-of-responsibility</strong> pattern for middleware rather than an event bus.
+    Each middleware receives the <code>ToolInvocationContext</code> and a <code>next</code> callable. This enables
+    rich control: a middleware can modify inputs, wrap the call in a try/catch, add timing, retry, or
+    short-circuit entirely. The chain is built in reverse order so the first middleware added is the outermost wrapper.</p>
+</div>
+
+<div class="card">
+  <h4>6. Lazy Graph Compilation</h4>
+  <p>The agent delays graph compilation until the first invocation. Adding/removing tools, hooks, or middleware only
+    sets a dirty flag. This batches configuration changes efficiently and avoids unnecessary recompilation. The
+    <code>threading.RLock</code> ensures thread safety for concurrent access.</p>
+</div>
+
+<div class="card">
+  <h4>7. Sync-First with Async Adaption</h4>
+  <p>All tool lifecycle hooks default to sync and have async counterparts. The <code>maybe_await</code> / <code>maybe_await_sync</code>
+    utilities bridge both worlds. This means users can write simple sync hooks and they work in both sync and async
+    execution contexts, while power users can write native async hooks for I/O-heavy work.</p>
+</div>
+
+<div class="card">
+  <h4>8. Event Sink Pattern for Streaming</h4>
+  <p>Rather than yielding events directly from deep within the tool pipeline, nodes accept an optional <code>event_sink</code>
+    callback. Events are collected in a pending queue and yielded by the top-level stream generator. This cleanly
+    separates event emission from stream control flow, enabling both sync and async streaming with the same node code.
+    The <code>run_id</code> is injected at the stream level after emission.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="exports">Public Exports</h2>
+<p>All symbols exported from <code>agent_kit.__init__</code>:</p>
+
+<div class="card" style="column-count: 3; column-gap: 32px; font-family: 'SF Mono', monospace; font-size: 13px; line-height: 2;">
+  <span style="color: var(--accent);">Agent</span><br>
+  <span style="color: var(--accent6);">AgentConfig</span><br>
+  <span style="color: var(--accent);">BaseTool</span><br>
+  <span style="color: var(--accent4);">ErrorEvent</span><br>
+  <span style="color: var(--accent);">FunctionTool</span><br>
+  <span style="color: var(--accent6);">GraphBuildConfig</span><br>
+  <span style="color: var(--accent6);">InvocationConfig</span><br>
+  <span style="color: var(--accent6);">InvocationRequest</span><br>
+  <span style="color: var(--accent4);">LLMTokenEvent</span><br>
+  <span style="color: var(--accent3);">MetricsMiddleware</span><br>
+  <span style="color: var(--accent4);">ModelToolBindingError</span><br>
+  <span style="color: var(--accent6);">NestedAgentPolicy</span><br>
+  <span style="color: var(--accent3);">RetryMiddleware</span><br>
+  <span style="color: var(--accent4);">RunEndEvent</span><br>
+  <span style="color: var(--accent4);">RunStartEvent</span><br>
+  <span style="color: var(--accent4);">StateUpdateEvent</span><br>
+  <span style="color: var(--accent4);">StreamEvent</span><br>
+  <span style="color: var(--accent3);">TimeoutMiddleware</span><br>
+  <span style="color: var(--accent6);">ToolBindingMode</span><br>
+  <span style="color: var(--accent6);">ToolDecision</span><br>
+  <span style="color: var(--accent4);">ToolEndEvent</span><br>
+  <span style="color: var(--accent6);">ToolError</span><br>
+  <span style="color: var(--accent);">ToolExecutor</span><br>
+  <span style="color: var(--accent);">ToolRegistry</span><br>
+  <span style="color: var(--accent6);">ToolResult</span><br>
+  <span style="color: var(--accent4);">ToolSchemaConversionError</span><br>
+  <span style="color: var(--accent6);">ToolSchemaSyncPolicy</span><br>
+  <span style="color: var(--accent4);">ToolStartEvent</span><br>
+  <span style="color: var(--accent4);">ToolValidationError</span><br>
+  <span style="color: var(--accent2);">agent_as_tool</span><br>
+  <span style="color: var(--accent2);">logging_middleware</span><br>
+  <span style="color: var(--accent2);">tool</span>
+</div>
+
+<div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border); text-align: center; color: var(--text-muted); font-size: 13px;">
+  Agent Kit v0.1.0 &middot; Generated documentation &middot; Python 3.10+
+</div>
+
+</main>
+
+<script>
+// Highlight active nav link on scroll
+const sections = document.querySelectorAll('h2[id], h3[id]');
+const navLinks = document.querySelectorAll('nav a');
+
+function updateActiveNav() {
+  let current = '';
+  sections.forEach(section => {
+    const rect = section.getBoundingClientRect();
+    if (rect.top <= 80) current = section.id;
+  });
+  navLinks.forEach(link => {
+    link.classList.toggle('active', link.getAttribute('href') === '#' + current);
+  });
+}
+
+window.addEventListener('scroll', updateActiveNav, { passive: true });
+updateActiveNav();
+</script>
+</body>
+</html>
