@@ -23,7 +23,17 @@
 - `agent_kit.llm.ToolCall`: normalized tool call payload (`id`, `name`, `args`).
 - `agent_kit.llm.LangChainModelAdapter`: adapter for LangChain runnable chat models.
 - `agent_kit.llm.ConduitModelAdapter`: adapter for `llm-conduit` models.
+- Conduit-specific configurable keys:
+  - `agent_kit.llm.CONDUIT_CONTEXT_METADATA_KEY` (`"conduit_context_metadata"`)
+  - `agent_kit.llm.CONDUIT_RUNTIME_OVERRIDES_KEY` (`"conduit_runtime_overrides"`)
 - `agent_kit.model_adapter` is no longer the canonical adapter module path.
+
+For conduit model invocations:
+
+- `InvocationConfig.configurable` maps to conduit `config_overrides`.
+- `InvocationConfig.thread_id` and `InvocationConfig.tags` map to conduit `RequestContext`.
+- `InvocationConfig.configurable[CONDUIT_CONTEXT_METADATA_KEY]` maps to `RequestContext.metadata`.
+- `InvocationConfig.configurable[CONDUIT_RUNTIME_OVERRIDES_KEY]` maps to conduit `runtime_overrides`.
 
 ## Tools
 

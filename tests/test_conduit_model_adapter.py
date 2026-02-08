@@ -6,14 +6,19 @@ from typing import Any
 import pytest
 from conduit import Conduit, SyncConduit
 from conduit.config import VLLMConfig
-from conduit.models.messages import ChatResponse, Message, Role
+from conduit.models.messages import ChatResponse, Message, RequestContext, Role, TextPart
 from conduit.tools.schema import ToolCall as ConduitToolCall
 from conduit.tools.schema import ToolDefinition
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.messages import AIMessage, ChatMessage, HumanMessage, SystemMessage, ToolMessage
 
 from agent_kit import Agent, AgentConfig, tool
 from agent_kit.config import InvocationConfig
-from agent_kit.llm.conduit_adapter import ConduitModelAdapter, tool_schemas_to_conduit_tools
+from agent_kit.llm.conduit_adapter import (
+    CONDUIT_CONTEXT_METADATA_KEY,
+    CONDUIT_RUNTIME_OVERRIDES_KEY,
+    ConduitModelAdapter,
+    tool_schemas_to_conduit_tools,
+)
 from agent_kit.state import AgentState
 
 
@@ -24,7 +29,7 @@ def echo_tool(state: AgentState, text: str) -> dict[str, str]:
 
 
 @pytest.mark.asyncio
-async def test_conduit_model_adapter_maps_messages_response_and_config_overrides() -> None:
+async def test_conduit_model_adapter_maps_messages_response_and_request_options() -> None:
     model = Conduit(VLLMConfig(model="m"))
     seen: dict[str, Any] = {}
 
@@ -34,12 +39,16 @@ async def test_conduit_model_adapter_maps_messages_response_and_config_overrides
         tool_choice: str | dict[str, Any] | None = None,
         stream: bool = False,
         config_overrides: dict[str, Any] | None = None,
+        context: RequestContext | None = None,
+        runtime_overrides: dict[str, Any] | None = None,
     ) -> ChatResponse:
         del stream
         seen["messages"] = messages
         seen["tools"] = tools
         seen["tool_choice"] = tool_choice
         seen["config_overrides"] = config_overrides
+        seen["context"] = context
+        seen["runtime_overrides"] = runtime_overrides
         return ChatResponse(
             content="done",
             tool_calls=[
@@ -77,7 +86,11 @@ async def test_conduit_model_adapter_maps_messages_response_and_config_overrides
             ToolMessage(content='{"status":"ok"}', tool_call_id="call-1", name="echo"),
         ],
         InvocationConfig(
-            configurable={"temperature": 0.2},
+            configurable={
+                "temperature": 0.2,
+                CONDUIT_CONTEXT_METADATA_KEY: {"trace_id": "abc123"},
+                CONDUIT_RUNTIME_OVERRIDES_KEY: {"example": "value"},
+            },
             thread_id="thread-1",
             tags=["tag-1"],
         ),
@@ -86,6 +99,13 @@ async def test_conduit_model_adapter_maps_messages_response_and_config_overrides
     await model.aclose()
 
     assert seen["config_overrides"] == {"temperature": 0.2}
+    assert seen["runtime_overrides"] == {"example": "value"}
+    seen_context = seen["context"]
+    assert isinstance(seen_context, RequestContext)
+    assert seen_context.thread_id == "thread-1"
+    assert seen_context.tags == ["tag-1"]
+    assert seen_context.metadata == {"trace_id": "abc123"}
+
     assert seen["tool_choice"] == "auto"
     assert seen["tools"] is not None
     seen_tools = seen["tools"]
@@ -102,8 +122,167 @@ async def test_conduit_model_adapter_maps_messages_response_and_config_overrides
     assert seen_messages[3].role == Role.TOOL
     assert seen_messages[3].tool_call_id == "call-1"
 
+    assert seen_messages[0].content is not None
+    assert len(seen_messages[0].content) == 1
+    assert isinstance(seen_messages[0].content[0], TextPart)
+    assert seen_messages[0].content[0].text == "System"
+
     assert response.tokens == ["done"]
     assert response.tool_calls == [{"id": "c1", "name": "echo", "args": {"text": "hello"}}]
+
+
+def test_conduit_model_adapter_parses_legacy_tool_calls_from_additional_kwargs() -> None:
+    model = SyncConduit(VLLMConfig(model="m"))
+    seen_messages: list[Message] = []
+
+    def fake_chat(
+        messages: list[Message],
+        tools: list[ToolDefinition] | None = None,
+        tool_choice: str | dict[str, Any] | None = None,
+        stream: bool = False,
+        config_overrides: dict[str, Any] | None = None,
+        context: RequestContext | None = None,
+        runtime_overrides: dict[str, Any] | None = None,
+    ) -> ChatResponse:
+        nonlocal seen_messages
+        del tools, tool_choice, stream, config_overrides, context, runtime_overrides
+        seen_messages = messages
+        return ChatResponse(content="done")
+
+    model.chat = fake_chat  # type: ignore[method-assign]
+    adapter = ConduitModelAdapter(model)
+
+    response = adapter.complete(
+        [
+            AIMessage(
+                content="",
+                additional_kwargs={
+                    "tool_calls": [
+                        {
+                            "id": "call-1",
+                            "type": "function",
+                            "function": {
+                                "name": "echo",
+                                "arguments": '{"text":"hello"}',
+                            },
+                        }
+                    ]
+                },
+            )
+        ],
+        InvocationConfig(),
+    )
+    model.close()
+
+    assert response.tool_calls == []
+    assert len(seen_messages) == 1
+    assert seen_messages[0].role == Role.ASSISTANT
+    assert seen_messages[0].tool_calls is not None
+    assert seen_messages[0].tool_calls[0].id == "call-1"
+    assert seen_messages[0].tool_calls[0].name == "echo"
+    assert seen_messages[0].tool_calls[0].arguments == {"text": "hello"}
+
+
+def test_conduit_model_adapter_accepts_chat_message_roles() -> None:
+    model = SyncConduit(VLLMConfig(model="m"))
+    seen_messages: list[Message] = []
+
+    def fake_chat(
+        messages: list[Message],
+        tools: list[ToolDefinition] | None = None,
+        tool_choice: str | dict[str, Any] | None = None,
+        stream: bool = False,
+        config_overrides: dict[str, Any] | None = None,
+        context: RequestContext | None = None,
+        runtime_overrides: dict[str, Any] | None = None,
+    ) -> ChatResponse:
+        nonlocal seen_messages
+        del tools, tool_choice, stream, config_overrides, context, runtime_overrides
+        seen_messages = messages
+        return ChatResponse(content="done")
+
+    model.chat = fake_chat  # type: ignore[method-assign]
+    adapter = ConduitModelAdapter(model)
+
+    adapter.complete(
+        [
+            ChatMessage(role="system", content="rules"),
+            ChatMessage(role="user", content="hi"),
+            ChatMessage(
+                role="assistant",
+                content="",
+                additional_kwargs={
+                    "tool_calls": [
+                        {
+                            "id": "call-2",
+                            "function": {"name": "echo", "arguments": '{"text":"world"}'},
+                        }
+                    ]
+                },
+            ),
+            ChatMessage(role="tool", content='{"status":"ok"}'),
+        ],
+        InvocationConfig(),
+    )
+    model.close()
+
+    assert len(seen_messages) == 4
+    assert seen_messages[0].role == Role.SYSTEM
+    assert seen_messages[1].role == Role.USER
+    assert seen_messages[2].role == Role.ASSISTANT
+    assert seen_messages[2].tool_calls is not None
+    assert seen_messages[2].tool_calls[0].name == "echo"
+    assert seen_messages[2].tool_calls[0].arguments == {"text": "world"}
+    assert seen_messages[3].role == Role.TOOL
+
+
+def test_conduit_model_adapter_preserves_extra_fields_on_text_dict_parts() -> None:
+    model = SyncConduit(VLLMConfig(model="m"))
+    seen_messages: list[Message] = []
+
+    def fake_chat(
+        messages: list[Message],
+        tools: list[ToolDefinition] | None = None,
+        tool_choice: str | dict[str, Any] | None = None,
+        stream: bool = False,
+        config_overrides: dict[str, Any] | None = None,
+        context: RequestContext | None = None,
+        runtime_overrides: dict[str, Any] | None = None,
+    ) -> ChatResponse:
+        nonlocal seen_messages
+        del tools, tool_choice, stream, config_overrides, context, runtime_overrides
+        seen_messages = messages
+        return ChatResponse(content="done")
+
+    model.chat = fake_chat  # type: ignore[method-assign]
+    adapter = ConduitModelAdapter(model)
+
+    adapter.complete(
+        [
+            HumanMessage(
+                content=[
+                    {
+                        "type": "text",
+                        "text": "Preserve me",
+                        "cache_control": {"type": "ephemeral"},
+                    }
+                ]
+            )
+        ],
+        InvocationConfig(),
+    )
+    model.close()
+
+    assert len(seen_messages) == 1
+    seen_content = seen_messages[0].content
+    assert isinstance(seen_content, list)
+    assert len(seen_content) == 1
+    assert isinstance(seen_content[0], dict)
+    assert seen_content[0] == {
+        "type": "text",
+        "text": "Preserve me",
+        "cache_control": {"type": "ephemeral"},
+    }
 
 
 @pytest.mark.asyncio
@@ -116,8 +295,10 @@ async def test_agent_auto_wraps_async_conduit_for_async_calls() -> None:
         tool_choice: str | dict[str, Any] | None = None,
         stream: bool = False,
         config_overrides: dict[str, Any] | None = None,
+        context: RequestContext | None = None,
+        runtime_overrides: dict[str, Any] | None = None,
     ) -> ChatResponse:
-        del messages, tools, tool_choice, stream, config_overrides
+        del messages, tools, tool_choice, stream, config_overrides, context, runtime_overrides
         return ChatResponse(content="done")
 
     model.chat = fake_chat  # type: ignore[method-assign]
@@ -148,8 +329,10 @@ def test_agent_auto_wraps_sync_conduit_for_sync_calls() -> None:
         tool_choice: str | dict[str, Any] | None = None,
         stream: bool = False,
         config_overrides: dict[str, Any] | None = None,
+        context: RequestContext | None = None,
+        runtime_overrides: dict[str, Any] | None = None,
     ) -> ChatResponse:
-        del messages, tools, tool_choice, stream, config_overrides
+        del messages, tools, tool_choice, stream, config_overrides, context, runtime_overrides
         return ChatResponse(content="done")
 
     model.chat = fake_chat  # type: ignore[method-assign]
@@ -182,9 +365,11 @@ def test_agent_conduit_auto_mode_sends_tool_schemas_and_records_signature() -> N
         tool_choice: str | dict[str, Any] | None = None,
         stream: bool = False,
         config_overrides: dict[str, Any] | None = None,
+        context: RequestContext | None = None,
+        runtime_overrides: dict[str, Any] | None = None,
     ) -> ChatResponse:
         nonlocal seen_tools
-        del messages, tool_choice, stream, config_overrides
+        del messages, tool_choice, stream, config_overrides, context, runtime_overrides
         seen_tools = tools
         return ChatResponse(content="done")
 
@@ -210,9 +395,11 @@ def test_agent_conduit_manual_mode_skips_tool_schemas() -> None:
         tool_choice: str | dict[str, Any] | None = None,
         stream: bool = False,
         config_overrides: dict[str, Any] | None = None,
+        context: RequestContext | None = None,
+        runtime_overrides: dict[str, Any] | None = None,
     ) -> ChatResponse:
         nonlocal seen_tools
-        del messages, tool_choice, stream, config_overrides
+        del messages, tool_choice, stream, config_overrides, context, runtime_overrides
         seen_tools = tools
         return ChatResponse(content="done")
 
@@ -241,9 +428,11 @@ def test_agent_conduit_off_mode_skips_tool_schemas() -> None:
         tool_choice: str | dict[str, Any] | None = None,
         stream: bool = False,
         config_overrides: dict[str, Any] | None = None,
+        context: RequestContext | None = None,
+        runtime_overrides: dict[str, Any] | None = None,
     ) -> ChatResponse:
         nonlocal seen_tools
-        del messages, tool_choice, stream, config_overrides
+        del messages, tool_choice, stream, config_overrides, context, runtime_overrides
         seen_tools = tools
         return ChatResponse(content="done")
 
@@ -262,9 +451,10 @@ def test_agent_conduit_off_mode_skips_tool_schemas() -> None:
     assert agent.last_tool_schema_signature is None
 
 
-def test_agent_conduit_uses_only_configurable_as_overrides() -> None:
+def test_agent_conduit_maps_thread_and_tags_to_request_context() -> None:
     model = SyncConduit(VLLMConfig(model="m"))
     seen_config_overrides: dict[str, Any] | None = None
+    seen_context: RequestContext | None = None
 
     def fake_chat(
         messages: list[Message],
@@ -272,10 +462,13 @@ def test_agent_conduit_uses_only_configurable_as_overrides() -> None:
         tool_choice: str | dict[str, Any] | None = None,
         stream: bool = False,
         config_overrides: dict[str, Any] | None = None,
+        context: RequestContext | None = None,
+        runtime_overrides: dict[str, Any] | None = None,
     ) -> ChatResponse:
-        nonlocal seen_config_overrides
-        del messages, tools, tool_choice, stream
+        nonlocal seen_config_overrides, seen_context
+        del messages, tools, tool_choice, stream, runtime_overrides
         seen_config_overrides = config_overrides
+        seen_context = context
         return ChatResponse(content="done")
 
     model.chat = fake_chat  # type: ignore[method-assign]
@@ -293,6 +486,9 @@ def test_agent_conduit_uses_only_configurable_as_overrides() -> None:
 
     assert state["termination"]["reason"] == "completed"
     assert seen_config_overrides == {"temperature": 0.1}
+    assert isinstance(seen_context, RequestContext)
+    assert seen_context.thread_id == "thread-1"
+    assert seen_context.tags == ["tag-1"]
 
 
 def test_sync_conduit_blocks_acomplete_directly() -> None:

@@ -301,7 +301,7 @@ wheels = [
 [[package]]
 name = "llm-conduit"
 version = "0.1.0"
-source = { git = "ssh://git@github.com/tylerstennett/llm-conduit.git?rev=main#1ce64d18725bb78f5a888fe6e63562294647dc48" }
+source = { git = "ssh://git@github.com/tylerstennett/llm-conduit.git?rev=main#46b1f0f0703889fce750e2dbac9ee92de4fc8d9d" }
 dependencies = [
     { name = "httpx" },
     { name = "pydantic" },

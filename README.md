@@ -62,7 +62,12 @@ print(state["termination"])
 
 - `Agent(model=Conduit(...))` is async-only. Use `arun`, `ainvoke`, and `astream`.
 - `Agent(model=SyncConduit(...))` is sync-only. Use `run`, `invoke`, and `stream`.
-- For conduit, only `InvocationConfig.configurable` maps into provider request overrides.
+- Conduit request mapping behavior:
+  - `InvocationConfig.configurable` maps to conduit `config_overrides`.
+  - `InvocationConfig.thread_id` and `InvocationConfig.tags` map to conduit `RequestContext`.
+  - Reserved configurable keys:
+    - `conduit_context_metadata`: merged into `RequestContext.metadata`.
+    - `conduit_runtime_overrides`: passed to conduit `runtime_overrides`.
 - Adapter interfaces now live under `agent_kit.llm` (for example `agent_kit.llm.ModelAdapter`).
 
 ## Validation Repair Budget
