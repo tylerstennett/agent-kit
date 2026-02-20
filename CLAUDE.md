@@ -8,27 +8,32 @@ Agent Kit is a typed Python toolkit (Python 3.11+) for building stateful, extens
 
 ## Commands
 
+All commands use `uv run` to execute inside the project virtualenv without manual activation.
+
 ```bash
 # Install (editable, with dev dependencies)
 uv pip install -e ".[dev]"
 
-# Run all tests
-pytest
+# Run all unit tests
+uv run pytest
 
 # Run a single test file
-pytest tests/test_agent_invocation.py
+uv run pytest tests/test_agent_invocation.py
 
 # Run a single test by name
-pytest tests/test_agent_invocation.py -k "test_name"
+uv run pytest tests/test_agent_invocation.py -k "test_name"
+
+# Run integration tests (requires OPENROUTER_API_KEY in .env)
+uv run pytest tests/integration/ -v
 
 # Lint
-ruff check src/ tests/
+uv run ruff check src/ tests/
 
 # Format
-ruff format src/ tests/
+uv run ruff format src/ tests/
 
 # Type check
-mypy src/
+uv run mypy src/
 ```
 
 ## Architecture
@@ -74,6 +79,11 @@ Middleware wraps tool execution as `(ToolInvocationContext, NextCallable) -> Too
 - `conftest.py` adds `src/` to `sys.path` so imports resolve as `agent_kit.*`.
 - Async tests use `pytest-asyncio` with `asyncio_mode = "auto"` (no need for `@pytest.mark.asyncio`).
 - Fake tools (`EchoTool`, `MetadataTool`, `SlowTool`) are in `tests/fakes.py`.
+- Integration tests live in `tests/integration/` and are marked `@pytest.mark.integration`. They require `OPENROUTER_API_KEY` in `.env` and are auto-skipped when the key is absent.
+
+## Conduit Dependency
+
+Conduit (`conduit @ git+https://github.com/tylerstennett/conduit.git@main`) is maintained by the same author as Agent Kit. When working on Agent Kit, if you identify improvements, bugs, or missing features in Conduit itself (e.g., message format issues, missing API surface, tool schema gaps, streaming behavior), **call these out explicitly in your output**. We have direct commit access to the Conduit repository and can make changes there in tandem with Agent Kit work.
 
 ## Commit Format
 

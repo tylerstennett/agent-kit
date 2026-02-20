@@ -287,7 +287,7 @@ class ToolExecutor:
                 return ToolExecutionOutcome(state=state, result=result)
 
         try:
-            decision: ToolDecision = maybe_await_sync(tool.apre_execute(state))
+            decision: ToolDecision = tool.pre_execute(state)
         except Exception as exc:
             result = tool.normalize_failure(context.call_id, exc, started, code="pre_execute_error")
             state, result = self._apply_after_hooks_sync(state, tool.name, result, started)
@@ -311,10 +311,10 @@ class ToolExecutor:
 
         try:
             validate_args(tool.arg_specs, context.tool_args, allow_extra=tool.allow_extra_args)
-            output = maybe_await_sync(tool.aexecute(state, **context.tool_args))
+            output = tool.execute(state, **context.tool_args)
             ended = time.perf_counter()
             result = tool.normalize_success(context.call_id, output, started, ended)
-            state, result = maybe_await_sync(tool.apost_execute(state, result))
+            state, result = tool.post_execute(state, result)
         except ToolValidationError as exc:
             result = tool.normalize_failure(context.call_id, exc, started, code="validation_error")
             if result.error is not None and exc.details:
