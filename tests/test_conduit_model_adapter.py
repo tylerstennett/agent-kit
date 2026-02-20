@@ -236,7 +236,7 @@ def test_conduit_model_adapter_accepts_chat_message_roles() -> None:
     assert seen_messages[3].role == Role.TOOL
 
 
-def test_conduit_model_adapter_preserves_extra_fields_on_text_dict_parts() -> None:
+def test_conduit_model_adapter_strips_extra_fields_on_text_dict_parts() -> None:
     model = SyncConduit(VLLMConfig(model="m"))
     seen_messages: list[Message] = []
 
@@ -277,12 +277,8 @@ def test_conduit_model_adapter_preserves_extra_fields_on_text_dict_parts() -> No
     seen_content = seen_messages[0].content
     assert isinstance(seen_content, list)
     assert len(seen_content) == 1
-    assert isinstance(seen_content[0], dict)
-    assert seen_content[0] == {
-        "type": "text",
-        "text": "Preserve me",
-        "cache_control": {"type": "ephemeral"},
-    }
+    assert isinstance(seen_content[0], TextPart)
+    assert seen_content[0].text == "Preserve me"
 
 
 @pytest.mark.asyncio

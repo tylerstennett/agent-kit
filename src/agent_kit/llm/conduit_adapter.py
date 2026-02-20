@@ -7,7 +7,10 @@ from uuid import uuid4
 from conduit import Conduit, SyncConduit
 from conduit.models.messages import (
     ChatResponse,
+    ContentPart,
     ImageUrlPart,
+    InputAudio,
+    InputAudioPart,
     Message,
     RequestContext,
     Role,
@@ -226,16 +229,14 @@ class ConduitModelAdapter:
 
         raise TypeError(f"Unsupported message type for ConduitModelAdapter: {type(message)!r}")
 
-    def _to_content_parts(
-        self, content: object
-    ) -> list[TextPart | ImageUrlPart | dict[str, Any]] | None:
+    def _to_content_parts(self, content: object) -> list[ContentPart] | None:
         if content is None:
             return None
         if isinstance(content, str):
             return [TextPart(text=content)]
 
         if isinstance(content, list):
-            parts: list[TextPart | ImageUrlPart | dict[str, Any]] = []
+            parts: list[ContentPart] = []
             for item in content:
                 converted = self._to_content_part(item)
                 if converted is not None:
@@ -244,10 +245,10 @@ class ConduitModelAdapter:
 
         raise TypeError("Conduit message content must be a string, list of parts, or None.")
 
-    def _to_content_part(self, item: object) -> TextPart | ImageUrlPart | dict[str, Any] | None:
+    def _to_content_part(self, item: object) -> ContentPart | None:
         if item is None:
             return None
-        if isinstance(item, TextPart | ImageUrlPart):
+        if isinstance(item, TextPart | ImageUrlPart | InputAudioPart):
             return item
         if isinstance(item, str):
             return TextPart(text=item)
@@ -257,22 +258,34 @@ class ConduitModelAdapter:
             if item_type == "text":
                 text_value = item.get("text")
                 if isinstance(text_value, str):
-                    if len(item) == 2:
-                        return TextPart(text=text_value)
-                    return dict(item)
+                    return TextPart(text=text_value)
                 raise TypeError("Text content part must include a string 'text' field.")
 
             if item_type == "image_url":
+                url_value = item.get("url")
+                if isinstance(url_value, str):
+                    return ImageUrlPart(url=url_value)
                 image_payload = item.get("image_url")
                 if isinstance(image_payload, dict):
                     url_value = image_payload.get("url")
                     if isinstance(url_value, str):
-                        if len(item) == 2 and len(image_payload) == 1:
-                            return ImageUrlPart(url=url_value)
-                        return dict(item)
-                raise TypeError("Image content part must include image_url.url as a string.")
+                        return ImageUrlPart(url=url_value)
+                raise TypeError("Image content part must include a url or image_url.url string.")
 
-            return dict(item)
+            if item_type == "input_audio":
+                audio_payload = item.get("input_audio")
+                if isinstance(audio_payload, dict):
+                    data_value = audio_payload.get("data")
+                    if isinstance(data_value, str):
+                        return InputAudioPart(
+                            input_audio=InputAudio(
+                                data=data_value,
+                                format=audio_payload.get("format"),
+                            )
+                        )
+                raise TypeError("Input audio content part must include input_audio.data string.")
+
+            raise TypeError(f"Unsupported content part type: {item_type!r}")
 
         raise TypeError("Content parts must be strings, dictionaries, or typed content parts.")
 
