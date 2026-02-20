@@ -11,7 +11,7 @@ requires-python = ">=3.11,<3.13"
 license = { file = "LICENSE" }
 authors = [{ name = "Agent Kit Contributors" }]
 dependencies = [
-  "llm-conduit @ git+https://github.com/tylerstennett/llm-conduit.git@main",
+  "conduit @ git+https://github.com/tylerstennett/conduit.git@main",
   "langchain-core>=0.3.0,<0.4.0",
   "langgraph>=0.2.0,<0.3.0",
 ]

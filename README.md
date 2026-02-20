@@ -39,7 +39,7 @@ print(state["termination"])
 
 - Stateful tools that receive full `AgentState`.
 - Automatic tool schema binding for `BaseChatModel` inputs (`AgentConfig.model_tool_binding_mode="auto"`).
-- First-class `llm-conduit` model support with automatic `Conduit`/`SyncConduit` adapter wrapping.
+- First-class `conduit` model support with automatic `Conduit`/`SyncConduit` adapter wrapping.
 - Strict schema conversion by default (`AgentConfig.tool_schema_sync_policy="strict"`).
 - Tool and agent lifecycle interception via hooks and middleware.
 - Swappable graph builders with a default ReAct loop.
@@ -49,7 +49,7 @@ print(state["termination"])
 ## Tool Binding Behavior
 
 - Default behavior auto-binds runtime tools to `BaseChatModel` instances.
-- The same `model_tool_binding_mode` behavior applies to `llm-conduit` models:
+- The same `model_tool_binding_mode` behavior applies to `conduit` models:
   - `"auto"`: convert runtime tools to conduit `ToolDefinition` payloads.
   - `"manual"` and `"off"`: do not send runtime tool schemas to conduit.
 - `model_tool_binding_mode` options:

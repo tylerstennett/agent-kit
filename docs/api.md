@@ -12,8 +12,8 @@
 `Agent.model` accepts:
 
 - LangChain `BaseChatModel`
-- `llm-conduit` `Conduit` (async-only)
-- `llm-conduit` `SyncConduit` (sync-only)
+- `conduit` `Conduit` (async-only)
+- `conduit` `SyncConduit` (sync-only)
 - Any custom `agent_kit.llm.ModelAdapter`
 
 ## LLM Adapters
@@ -22,7 +22,7 @@
 - `agent_kit.llm.ModelResponse`: normalized model response payload.
 - `agent_kit.llm.ToolCall`: normalized tool call payload (`id`, `name`, `args`).
 - `agent_kit.llm.LangChainModelAdapter`: adapter for LangChain runnable chat models.
-- `agent_kit.llm.ConduitModelAdapter`: adapter for `llm-conduit` models.
+- `agent_kit.llm.ConduitModelAdapter`: adapter for `conduit` models.
 - Conduit-specific configurable keys:
   - `agent_kit.llm.CONDUIT_CONTEXT_METADATA_KEY` (`"conduit_context_metadata"`)
   - `agent_kit.llm.CONDUIT_RUNTIME_OVERRIDES_KEY` (`"conduit_runtime_overrides"`)
